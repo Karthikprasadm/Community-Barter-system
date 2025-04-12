@@ -31,7 +31,10 @@ const ItemDetail = () => {
   const item = getItemById(itemId);
   if (!item) return <Navigate to="/marketplace" />;
   
-  const owner = getUserById(item.userId)!;
+  const owner = getUserById(item.userId);
+  // If owner is not found, redirect to marketplace
+  if (!owner) return <Navigate to="/marketplace" />;
+  
   const isOwner = currentUser?.id === owner.id;
   const timeAgo = formatDistanceToNow(new Date(item.postedDate), { addSuffix: true });
   
