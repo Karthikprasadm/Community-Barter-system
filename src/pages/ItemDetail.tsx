@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { useBarterContext } from "@/context/BarterContext";
@@ -10,7 +11,6 @@ import { Separator } from "@/components/ui/separator";
 import { Clock, Edit, MessageSquare, Star, Trash } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getUserItems } from "@/data/mockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Item } from "@/types";
 import { Label } from "@/components/ui/label";
