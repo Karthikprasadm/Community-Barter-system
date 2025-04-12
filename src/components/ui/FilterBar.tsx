@@ -31,13 +31,17 @@ export const FilterBar = ({ onFilterChange }: FilterBarProps) => {
   };
 
   const handleCategoryChange = (value: string) => {
-    setCategory(value);
-    onFilterChange({ search, category: value, condition });
+    // If the special "_all" value is selected, convert it back to empty string
+    const categoryValue = value === "_all" ? "" : value;
+    setCategory(categoryValue);
+    onFilterChange({ search, category: categoryValue, condition });
   };
 
   const handleConditionChange = (value: string) => {
-    setCondition(value);
-    onFilterChange({ search, category, condition: value });
+    // If the special "_all" value is selected, convert it back to empty string
+    const conditionValue = value === "_all" ? "" : value;
+    setCondition(conditionValue);
+    onFilterChange({ search, category, condition: conditionValue });
   };
 
   const handleClearFilters = () => {
@@ -61,12 +65,15 @@ export const FilterBar = ({ onFilterChange }: FilterBarProps) => {
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <SlidersHorizontal className="h-4 w-4 text-gray-500 hidden md:block" />
-          <Select value={category} onValueChange={handleCategoryChange}>
+          <Select 
+            value={category === "" ? "_all" : category} 
+            onValueChange={handleCategoryChange}
+          >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="_all">All Categories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat} value={cat}>
                   {cat}
@@ -74,12 +81,15 @@ export const FilterBar = ({ onFilterChange }: FilterBarProps) => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={condition} onValueChange={handleConditionChange}>
+          <Select 
+            value={condition === "" ? "_all" : condition} 
+            onValueChange={handleConditionChange}
+          >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Condition" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any Condition</SelectItem>
+              <SelectItem value="_all">Any Condition</SelectItem>
               {conditions.map((cond) => (
                 <SelectItem key={cond} value={cond}>
                   {cond}
