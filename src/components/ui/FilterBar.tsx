@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface FilterBarProps {
   onFilterChange: (filters: {
@@ -18,12 +18,26 @@ interface FilterBarProps {
     category: string;
     condition: string;
   }) => void;
+  initialFilters?: {
+    search: string;
+    category: string;
+    condition: string;
+  };
 }
 
-export const FilterBar = ({ onFilterChange }: FilterBarProps) => {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [condition, setCondition] = useState("");
+export const FilterBar = ({ onFilterChange, initialFilters }: FilterBarProps) => {
+  const [search, setSearch] = useState(initialFilters?.search || "");
+  const [category, setCategory] = useState(initialFilters?.category || "");
+  const [condition, setCondition] = useState(initialFilters?.condition || "");
+
+  // Update local state when initialFilters change
+  useEffect(() => {
+    if (initialFilters) {
+      setSearch(initialFilters.search);
+      setCategory(initialFilters.category);
+      setCondition(initialFilters.condition);
+    }
+  }, [initialFilters]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);

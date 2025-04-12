@@ -1,6 +1,6 @@
 
 import { useBarterContext } from "@/context/BarterContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, Menu, Search } from "lucide-react";
@@ -13,9 +13,19 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
 export const Header = () => {
   const { currentUser, logout } = useBarterContext();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
@@ -45,10 +55,15 @@ export const Header = () => {
         </div>
         
         <div className="hidden md:flex items-center gap-2 flex-1 max-w-md mx-6">
-          <div className="relative w-full">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input placeholder="Search items..." className="pl-10 w-full" />
-          </div>
+            <Input 
+              placeholder="Search items..." 
+              className="pl-10 w-full" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
         </div>
         
         <div className="flex items-center gap-2">

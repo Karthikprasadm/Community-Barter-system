@@ -6,12 +6,14 @@ import { FilterBar } from "@/components/ui/FilterBar";
 import { ItemGrid } from "@/components/ui/ItemGrid";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { useSearchParams } from "react-router-dom";
 
 const Marketplace = () => {
   const { items, users } = useBarterContext();
+  const [searchParams] = useSearchParams();
   const [filteredItems, setFilteredItems] = useState<Item[]>(items);
   const [filters, setFilters] = useState({
-    search: "",
+    search: searchParams.get("search") || "",
     category: "",
     condition: "",
   });
@@ -39,6 +41,17 @@ const Marketplace = () => {
     setFilteredItems(results);
   }, [filters, items]);
 
+  // Update search filter when URL parameters change
+  useEffect(() => {
+    const searchParam = searchParams.get("search");
+    if (searchParam) {
+      setFilters(prevFilters => ({
+        ...prevFilters,
+        search: searchParam
+      }));
+    }
+  }, [searchParams]);
+
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
@@ -54,7 +67,7 @@ const Marketplace = () => {
           </p>
         </div>
         
-        <FilterBar onFilterChange={handleFilterChange} />
+        <FilterBar onFilterChange={handleFilterChange} initialFilters={filters} />
         
         {filteredItems.length > 0 ? (
           <ItemGrid items={filteredItems} users={users} />
