@@ -44,7 +44,7 @@ const Index = () => {
                     size="lg" 
                     variant="outline" 
                     asChild 
-                    className="bg-white text-barter-primary hover:bg-white/90 shadow-md transform transition-all hover:scale-105 active:scale-95 border-transparent"
+                    className="bg-white text-barter-primary hover:bg-barter-accent hover:text-white shadow-md transform transition-all hover:scale-105 active:scale-95 border-transparent"
                   >
                     <Link to="/register">Join Community</Link>
                   </Button>
