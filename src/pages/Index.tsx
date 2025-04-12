@@ -34,10 +34,19 @@ const Index = () => {
                   A sustainable way to exchange items you no longer need for things you want.
                 </p>
                 <div className="space-x-4 pt-4">
-                  <Button size="lg" asChild className="bg-barter-accent hover:bg-barter-accent/90 text-white">
+                  <Button 
+                    size="lg" 
+                    asChild 
+                    className="bg-barter-accent hover:bg-barter-accent/90 text-white shadow-lg transform transition-all hover:scale-105 active:scale-95"
+                  >
                     <Link to="/marketplace">Browse Marketplace</Link>
                   </Button>
-                  <Button size="lg" variant="outline" asChild className="text-white border-white hover:bg-white/10">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    asChild 
+                    className="text-white border-white hover:bg-white/10 shadow-md transform transition-all hover:scale-105 active:scale-95"
+                  >
                     <Link to="/register">Join Community</Link>
                   </Button>
                 </div>
@@ -146,7 +155,11 @@ const Index = () => {
             <p className="text-xl opacity-90 max-w-2xl mx-auto mb-8">
               Start trading items with people in your area today and discover the benefits of a money-free exchange system.
             </p>
-            <Button size="lg" asChild className="bg-barter-accent hover:bg-barter-accent/90 text-white">
+            <Button 
+              size="lg" 
+              asChild 
+              className="bg-barter-accent hover:bg-barter-accent/90 text-white shadow-lg transform transition-all hover:scale-105 active:scale-95"
+            >
               <Link to="/register">Sign Up Now</Link>
             </Button>
           </div>
@@ -158,3 +171,4 @@ const Index = () => {
 };
 
 export default Index;
+
