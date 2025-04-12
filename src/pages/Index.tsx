@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -45,7 +44,7 @@ const Index = () => {
                     size="lg" 
                     variant="outline" 
                     asChild 
-                    className="text-white border-white hover:bg-white/10 shadow-md transform transition-all hover:scale-105 active:scale-95"
+                    className="bg-white text-barter-primary hover:bg-white/90 shadow-md transform transition-all hover:scale-105 active:scale-95 border-transparent"
                   >
                     <Link to="/register">Join Community</Link>
                   </Button>
@@ -171,4 +170,3 @@ const Index = () => {
 };
 
 export default Index;
-
