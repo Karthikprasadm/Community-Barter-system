@@ -1,8 +1,9 @@
-
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { users, items, offers, trades, ratings } from "@/data/mockData";
 import { User, Item, Offer, Trade, Rating, OfferWithDetails } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
+import { UserReputation } from "@/components/ui/UserReputation";
+import { Star } from "lucide-react";
 
 interface BarterContextType {
   currentUser: User | null;
@@ -230,13 +231,24 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       ratingDate: new Date().toISOString().split('T')[0],
     };
     
+    // More sophisticated reputation calculation
+    const userRatings = ratingsState.filter(rating => rating.userId === userId);
+    const totalRatings = userRatings.length + 1;
+    const avgRating = (userRatings.reduce((sum, r) => sum + r.ratingValue, 0) + ratingValue) / totalRatings;
+    
+    // Update user reputation
+    const updatedUsers = usersState.map(user => 
+      user.id === userId 
+        ? { ...user, reputation: Number(avgRating.toFixed(1)) }
+        : user
+    );
+    
     setRatings(prev => [...prev, newRating]);
     
-    // Update user reputation (simplified calculation)
-    // In a real app, this would be a more sophisticated calculation on the backend
     toast({
       title: "Rating submitted",
       description: "Thank you for rating this trade.",
+      icon: <Star className="text-yellow-500" />
     });
   };
 
