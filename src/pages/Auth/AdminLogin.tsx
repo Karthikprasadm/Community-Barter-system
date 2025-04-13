@@ -6,24 +6,71 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBarterContext } from "@/context/BarterContext";
-import { Shield } from "lucide-react";
+import { Shield, AlertCircle, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminLogin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{username?: string; password?: string}>({});
   const { adminLogin } = useBarterContext();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const validateForm = () => {
+    const newErrors: {username?: string; password?: string} = {};
+    let isValid = true;
+
+    if (!username.trim()) {
+      newErrors.username = "Username is required";
+      isValid = false;
+    }
+
+    if (!password.trim()) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    } else if (password.length < 8) {
+      newErrors.password = "Password should be at least 8 characters";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       const success = await adminLogin(username, password);
       if (success) {
+        toast({
+          title: "Admin Access Granted",
+          description: "Welcome to the admin dashboard.",
+          variant: "default",
+        });
         navigate("/admin");
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid admin credentials. Please try again.",
+          variant: "destructive",
+        });
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "System Error",
+        description: "An unexpected error occurred. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -50,24 +97,48 @@ const AdminLogin = () => {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username" className="flex justify-between">
+                  <span>Username</span>
+                  {errors.username && (
+                    <span className="text-red-500 text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {errors.username}
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="username"
                   type="text"
                   placeholder="admin username"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (errors.username) setErrors({...errors, username: undefined});
+                  }}
+                  className={errors.username ? "border-red-300" : ""}
+                  autoComplete="username"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="flex justify-between">
+                  <span>Password</span>
+                  {errors.password && (
+                    <span className="text-red-500 text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {errors.password}
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors({...errors, password: undefined});
+                  }}
+                  className={errors.password ? "border-red-300" : ""}
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -78,7 +149,12 @@ const AdminLogin = () => {
                 className="w-full bg-purple-700 hover:bg-purple-800" 
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Access Admin Panel"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Verifying...
+                  </>
+                ) : "Access Admin Panel"}
               </Button>
             </CardFooter>
           </form>
