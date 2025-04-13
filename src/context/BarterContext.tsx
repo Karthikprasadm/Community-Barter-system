@@ -1,12 +1,13 @@
+
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { users, items, offers, trades, ratings } from "@/data/mockData";
 import { User, Item, Offer, Trade, Rating, OfferWithDetails } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
 import { UserReputation } from "@/components/ui/UserReputation";
-import { Star } from "lucide-react";
 
 interface BarterContextType {
   currentUser: User | null;
+  isAdmin: boolean;
   users: User[];
   items: Item[];
   offers: Offer[];
@@ -14,6 +15,7 @@ interface BarterContextType {
   ratings: Rating[];
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  adminLogin: (username: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string) => Promise<boolean>;
   addItem: (item: Omit<Item, "id" | "userId" | "postedDate">) => void;
   updateItem: (item: Item) => void;
@@ -26,6 +28,9 @@ interface BarterContextType {
   getUserById: (userId: string) => User | undefined;
   getPendingOffersForUser: (userId: string) => OfferWithDetails[];
   getUserTrades: (userId: string) => Trade[];
+  addUser: (user: Omit<User, "id" | "joinedDate">) => void;
+  deleteUser: (userId: string) => void;
+  updateUser: (user: User) => void;
 }
 
 const BarterContext = createContext<BarterContextType | undefined>(undefined);
@@ -40,11 +45,12 @@ export const useBarterContext = () => {
 
 export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [itemsState, setItems] = useState<Item[]>(items);
   const [offersState, setOffers] = useState<Offer[]>(offers);
   const [tradesState, setTrades] = useState<Trade[]>(trades);
   const [ratingsState, setRatings] = useState<Rating[]>(ratings);
-  const [usersState] = useState<User[]>(users);
+  const [usersState, setUsers] = useState<User[]>(users);
   const { toast } = useToast();
 
   // Sign in a user
@@ -56,6 +62,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const user = usersState.find(u => u.email === email);
     if (user) {
       setCurrentUser(user);
+      setIsAdmin(false);
       toast({
         title: "Success",
         description: `Welcome back, ${user.username}!`,
@@ -71,9 +78,45 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return false;
   };
 
+  // Admin login
+  const adminLogin = async (username: string, password: string): Promise<boolean> => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Check admin credentials (hardcoded for demo)
+    if (username === 'wingspawn' && password === 'wingspawn') {
+      setIsAdmin(true);
+      // Create a virtual admin user
+      const adminUser: User = {
+        id: "admin",
+        username: "Admin",
+        email: "admin@barternexus.com",
+        reputation: 5,
+        joinedDate: new Date().toISOString().split('T')[0],
+        profileImage: "https://images.unsplash.com/photo-1633332755192-727a05c4013d"
+      };
+      setCurrentUser(adminUser);
+      
+      toast({
+        title: "Admin Access Granted",
+        description: "You now have admin privileges.",
+        variant: "default",
+      });
+      return true;
+    }
+    
+    toast({
+      variant: "destructive",
+      title: "Admin Login Failed",
+      description: "Invalid admin credentials",
+    });
+    return false;
+  };
+
   // Sign out
   const logout = () => {
     setCurrentUser(null);
+    setIsAdmin(false);
     toast({
       title: "Logged out",
       description: "You have been logged out successfully.",
@@ -104,9 +147,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       joinedDate: new Date().toISOString().split('T')[0],
     };
     
-    // For simplicity in this mock data scenario, we're not adding the user to the state
-    // In a real app with a backend, this would add to the database
-    
+    setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     toast({
       title: "Success",
@@ -117,11 +158,11 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Add a new item
   const addItem = (itemData: Omit<Item, "id" | "userId" | "postedDate">) => {
-    if (!currentUser) return;
+    if (!currentUser && !isAdmin) return;
     
     const newItem: Item = {
       id: `item${itemsState.length + 1}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || "admin",
       postedDate: new Date().toISOString().split('T')[0],
       ...itemData,
     };
@@ -129,7 +170,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setItems(prev => [...prev, newItem]);
     toast({
       title: "Item added",
-      description: "Your item has been listed successfully.",
+      description: "The item has been listed successfully.",
     });
   };
 
@@ -138,7 +179,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
     toast({
       title: "Item updated",
-      description: "Your item has been updated successfully.",
+      description: "The item has been updated successfully.",
     });
   };
 
@@ -147,7 +188,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setItems(prev => prev.filter(item => item.id !== itemId));
     toast({
       title: "Item deleted",
-      description: "Your item has been removed.",
+      description: "The item has been removed.",
     });
   };
 
@@ -237,18 +278,17 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const avgRating = (userRatings.reduce((sum, r) => sum + r.ratingValue, 0) + ratingValue) / totalRatings;
     
     // Update user reputation
-    const updatedUsers = usersState.map(user => 
+    setUsers(prev => prev.map(user => 
       user.id === userId 
         ? { ...user, reputation: Number(avgRating.toFixed(1)) }
         : user
-    );
+    ));
     
     setRatings(prev => [...prev, newRating]);
     
     toast({
       title: "Rating submitted",
       description: "Thank you for rating this trade.",
-      icon: <Star className="text-yellow-500" />
     });
   };
 
@@ -298,8 +338,69 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return tradesState.filter(trade => userOfferIds.includes(trade.offerId));
   };
 
+  // Admin-only: Add a new user
+  const addUser = (userData: Omit<User, "id" | "joinedDate">) => {
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only administrators can add users.",
+      });
+      return;
+    }
+    
+    const newUser: User = {
+      id: `user${usersState.length + 1}`,
+      joinedDate: new Date().toISOString().split('T')[0],
+      ...userData,
+    };
+    
+    setUsers(prev => [...prev, newUser]);
+    toast({
+      title: "User added",
+      description: "The user has been added successfully.",
+    });
+  };
+
+  // Admin-only: Delete a user
+  const deleteUser = (userId: string) => {
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only administrators can delete users.",
+      });
+      return;
+    }
+    
+    setUsers(prev => prev.filter(user => user.id !== userId));
+    toast({
+      title: "User deleted",
+      description: "The user has been deleted successfully.",
+    });
+  };
+
+  // Admin-only: Update a user
+  const updateUser = (updatedUser: User) => {
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only administrators can update users.",
+      });
+      return;
+    }
+    
+    setUsers(prev => prev.map(user => user.id === updatedUser.id ? updatedUser : user));
+    toast({
+      title: "User updated",
+      description: "The user has been updated successfully.",
+    });
+  };
+
   const contextValue: BarterContextType = {
     currentUser,
+    isAdmin,
     users: usersState,
     items: itemsState,
     offers: offersState,
@@ -307,6 +408,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     ratings: ratingsState,
     login,
     logout,
+    adminLogin,
     register,
     addItem,
     updateItem,
@@ -319,6 +421,9 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     getUserById,
     getPendingOffersForUser,
     getUserTrades,
+    addUser,
+    deleteUser,
+    updateUser,
   };
 
   return (

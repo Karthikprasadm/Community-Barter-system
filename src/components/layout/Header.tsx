@@ -3,7 +3,7 @@ import { useBarterContext } from "@/context/BarterContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu, Search, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
   DropdownMenu, 
@@ -16,7 +16,7 @@ import {
 import { useState } from "react";
 
 export const Header = () => {
-  const { currentUser, logout } = useBarterContext();
+  const { currentUser, isAdmin, logout } = useBarterContext();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -51,6 +51,12 @@ export const Header = () => {
             <Link to="/offers" className="text-gray-600 hover:text-barter-primary transition-colors">
               Offers
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-purple-600 font-medium hover:text-purple-800 transition-colors flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
           </div>
         </div>
         
@@ -81,6 +87,11 @@ export const Header = () => {
                       <AvatarImage src={currentUser.profileImage} alt={currentUser.username} />
                       <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
+                    {isAdmin && (
+                      <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                        A
+                      </span>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -88,21 +99,42 @@ export const Header = () => {
                     <div className="flex flex-col">
                       <span>{currentUser.username}</span>
                       <span className="text-xs text-gray-500">{currentUser.email}</span>
+                      {isAdmin && (
+                        <span className="text-xs text-purple-600 font-semibold flex items-center gap-1 mt-1">
+                          <Shield className="h-3 w-3" /> Admin Access
+                        </span>
+                      )}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/my-items">My Items</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/offers">Offers</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/trades">Trade History</Link>
-                  </DropdownMenuItem>
+                  {isAdmin ? (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin">Admin Dashboard</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/users">Manage Users</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/items">Manage Items</Link>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile">Profile</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/my-items">My Items</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/offers">Offers</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/trades">Trade History</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     Log Out
@@ -117,6 +149,12 @@ export const Header = () => {
               </Button>
               <Button asChild>
                 <Link to="/register">Sign Up</Link>
+              </Button>
+              <Button variant="outline" className="flex items-center gap-1 border-purple-300 text-purple-700 hover:bg-purple-50" asChild>
+                <Link to="/admin-login">
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Link>
               </Button>
             </div>
           )}

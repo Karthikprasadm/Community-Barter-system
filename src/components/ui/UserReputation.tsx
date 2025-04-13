@@ -18,7 +18,7 @@ export const UserReputation: React.FC<UserReputationProps> = ({ score }) => {
   const getReputationColor = () => {
     if (score < 2) return "secondary";
     if (score < 5) return "default";
-    if (score < 10) return "primary";
+    if (score < 10) return "outline";
     return "destructive";
   };
 
