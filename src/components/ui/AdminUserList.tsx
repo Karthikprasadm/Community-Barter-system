@@ -20,13 +20,19 @@ import {
 import { BadgeCheck, ShieldAlert, Plus, Trash2 } from "lucide-react";
 import { useToast } from '@/components/ui/use-toast';
 import { motion } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AdminUserListProps {
   onAddAdmin: () => void;
 }
 
 export const AdminUserList: React.FC<AdminUserListProps> = ({ onAddAdmin }) => {
-  const { adminUsers, removeAdminUser, isHeadAdmin } = useBarterContext();
+  const { adminUsers, removeAdminUser, isHeadAdmin, users } = useBarterContext();
   const { toast } = useToast();
   
   const handleRemoveAdmin = (adminId: string, username: string, isHead: boolean) => {
@@ -120,16 +126,28 @@ export const AdminUserList: React.FC<AdminUserListProps> = ({ onAddAdmin }) => {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-900 hover:bg-red-50"
-                          onClick={() => handleRemoveAdmin(admin.id, admin.username, admin.isHeadAdmin)}
-                          disabled={admin.isHeadAdmin || !isHeadAdmin}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Remove
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-900 hover:bg-blue-50"
+                              disabled={admin.isHeadAdmin || !isHeadAdmin}
+                            >
+                              Actions
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="text-red-600 cursor-pointer" 
+                              onClick={() => handleRemoveAdmin(admin.id, admin.username, admin.isHeadAdmin)}
+                              disabled={admin.isHeadAdmin || !isHeadAdmin}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove Admin
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))

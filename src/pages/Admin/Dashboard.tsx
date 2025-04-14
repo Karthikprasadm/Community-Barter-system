@@ -8,10 +8,20 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle 
+  CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Database, 
   ShieldCheck, 
@@ -21,11 +31,17 @@ import {
   Plus,
   FileDown,
   Activity,
-  BarChart3 
+  BarChart3,
+  PlayCircle,
+  Save,
+  XCircle,
+  Check,
+  Clock
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { useToast } from "@/components/ui/use-toast";
 
 // Lazily load complex components
 const ActivityLog = lazy(() => import('@/components/ui/ActivityLog').then(mod => ({ default: mod.ActivityLog })));
@@ -45,8 +61,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 const AdminDashboard = () => {
-  const { isAdmin, isHeadAdmin, users, items, trades } = useBarterContext();
+  const { isAdmin, isHeadAdmin, users, items, trades, addUser, deleteUser, updateItem, deleteItem, addItem } = useBarterContext();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [showUserEditor, setShowUserEditor] = useState(false);
@@ -55,6 +79,11 @@ const AdminDashboard = () => {
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("database");
+  const [sqlQuery, setSqlQuery] = useState("SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;");
+  const [queryResult, setQueryResult] = useState<any[]>([]);
+  const [isQueryExecuting, setIsQueryExecuting] = useState(false);
+  const [isQueryEditable, setIsQueryEditable] = useState(false);
+  const { toast } = useToast();
   
   // Simulate loading state for smoother UX
   useEffect(() => {
@@ -70,6 +99,13 @@ const AdminDashboard = () => {
       navigate("/admin-login");
     }
   }, [isAdmin, navigate]);
+
+  // Execute initial query
+  useEffect(() => {
+    if (!isLoading && activeTab === 'database') {
+      handleExecuteQuery();
+    }
+  }, [isLoading, activeTab]);
 
   if (!isAdmin) {
     return null; // Will redirect due to the useEffect
@@ -114,6 +150,112 @@ const AdminDashboard = () => {
   
   const handleAdminSaved = () => {
     setShowAdminEditor(false);
+  };
+
+  const handleExecuteQuery = () => {
+    setIsQueryExecuting(true);
+    
+    // Mock query execution with timeout
+    setTimeout(() => {
+      try {
+        // Create mock query result based on the query
+        let result = [];
+        
+        if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('users')) {
+          result = users.map(user => ({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            reputation: user.reputation,
+            joinedDate: user.joinedDate,
+            item_count: items.filter(item => item.userId === user.id).length
+          }));
+        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('items')) {
+          result = items.map(item => ({
+            id: item.id,
+            name: item.name,
+            category: item.category,
+            userId: item.userId,
+            isAvailable: item.isAvailable ? 'Available' : 'Not Available',
+            postedDate: item.postedDate
+          }));
+        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('trades')) {
+          result = trades.map(trade => ({
+            id: trade.id,
+            offerId: trade.offerId,
+            tradeDate: trade.tradeDate,
+            notes: trade.notes || 'No notes'
+          }));
+        } else {
+          // Default query result
+          result = users.map(user => ({
+            username: user.username,
+            item_count: items.filter(item => item.userId === user.id).length
+          }));
+        }
+        
+        setQueryResult(result);
+        toast({
+          title: "Query executed successfully",
+          description: `Returned ${result.length} rows`,
+        });
+      } catch (error) {
+        console.error("Query execution error:", error);
+        toast({
+          variant: "destructive",
+          title: "Query execution failed",
+          description: "There was an error executing your SQL query",
+        });
+        setQueryResult([]);
+      } finally {
+        setIsQueryExecuting(false);
+      }
+    }, 800);
+  };
+
+  const handleClearQuery = () => {
+    setSqlQuery("");
+    setQueryResult([]);
+  };
+
+  const handleSaveResult = () => {
+    try {
+      // Here we would typically save changes to the database
+      // For this mock, we'll just show a success toast
+      toast({
+        title: "Changes saved",
+        description: "Your changes have been saved to the database",
+      });
+      setIsQueryEditable(false);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Save failed",
+        description: "There was an error saving your changes",
+      });
+    }
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+      deleteUser(userId);
+    }
+  };
+
+  const handleDeleteItem = (itemId: string) => {
+    if (window.confirm("Are you sure you want to delete this item? This action cannot be undone.")) {
+      deleteItem(itemId);
+    }
+  };
+
+  const handleUpdateItemStatus = (itemId: string, status: boolean) => {
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      updateItem({
+        ...item,
+        isAvailable: status
+      });
+    }
   };
 
   if (isLoading) {
@@ -268,41 +410,125 @@ const AdminDashboard = () => {
                   <CardHeader>
                     <CardTitle>SQL Query Tool</CardTitle>
                     <CardDescription>
-                      Execute SQL queries against the platform database
+                      Execute SQL queries against the platform database and edit results
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="bg-gray-800 text-white p-4 rounded-md font-mono text-sm">
-                        <div className="flex items-center gap-2 mb-2 text-gray-400 border-b border-gray-700 pb-2">
-                          <span>Mockup SQL Query Console</span>
+                        <div className="flex items-center justify-between gap-2 mb-2 text-gray-400 border-b border-gray-700 pb-2">
+                          <span>Database SQL Query Console</span>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleClearQuery}
+                              className="h-7 px-2 bg-gray-700 hover:bg-gray-600 text-gray-300 border-gray-600"
+                            >
+                              Clear
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleExecuteQuery}
+                              disabled={isQueryExecuting}
+                              className="h-7 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
+                            >
+                              {isQueryExecuting ? (
+                                <><RefreshCw className="h-3 w-3 animate-spin" /> Running...</>
+                              ) : (
+                                <><PlayCircle className="h-3 w-3" /> Execute</>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                         <div className="mb-4">
                           <p className="text-green-400">-- Type your SQL query below:</p>
-                          <pre className="text-gray-300 bg-gray-900 p-2 rounded mt-2 overflow-x-auto">
-                            {`SELECT u.username, COUNT(i.id) as item_count 
-FROM users u
-LEFT JOIN items i ON u.id = i.userId
-GROUP BY u.id
-ORDER BY item_count DESC;`}
-                          </pre>
+                          <Textarea 
+                            value={sqlQuery}
+                            onChange={(e) => setSqlQuery(e.target.value)}
+                            className="text-gray-300 bg-gray-900 p-2 rounded mt-2 overflow-x-auto h-32 font-mono text-sm resize-none border-gray-700 focus:border-blue-500"
+                            placeholder="Enter SQL query..."
+                          />
                         </div>
                         <div className="bg-gray-900 p-2 rounded">
-                          <p className="text-blue-400 mb-2">-- Query Results:</p>
-                          <pre className="text-gray-300">
-{`| username    | item_count |
-|------------|------------|
-| john_doe    | 2          |
-| jane_smith  | 2          |
-| alex_wilson | 2          |
-| sam_taylor  | 2          |
-`}
-                          </pre>
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-blue-400">-- Query Results:</p>
+                            <div className="flex gap-2">
+                              {isQueryEditable ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setIsQueryEditable(false)}
+                                    className="h-6 px-2 bg-red-700 hover:bg-red-600 text-red-50 border-red-600 flex items-center gap-1"
+                                  >
+                                    <XCircle className="h-3 w-3" /> Cancel
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleSaveResult}
+                                    className="h-6 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
+                                  >
+                                    <Save className="h-3 w-3" /> Save
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setIsQueryEditable(true)}
+                                  className="h-6 px-2 bg-blue-700 hover:bg-blue-600 text-blue-50 border-blue-600 flex items-center gap-1"
+                                >
+                                  Edit Results
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {queryResult.length > 0 ? (
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full text-gray-300 text-sm">
+                                <thead>
+                                  <tr className="border-b border-gray-700">
+                                    {Object.keys(queryResult[0]).map((key) => (
+                                      <th key={key} className="py-2 px-3 text-left">{key}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {queryResult.map((row, rowIndex) => (
+                                    <tr key={rowIndex} className="border-b border-gray-800">
+                                      {Object.entries(row).map(([key, value], cellIndex) => (
+                                        <td key={`${rowIndex}-${cellIndex}`} className="py-2 px-3">
+                                          {isQueryEditable ? (
+                                            <Input
+                                              value={String(value)}
+                                              className="bg-gray-800 border-gray-700 text-gray-300 h-7 text-xs"
+                                              onChange={(e) => {
+                                                const updatedResult = [...queryResult];
+                                                updatedResult[rowIndex] = {
+                                                  ...updatedResult[rowIndex],
+                                                  [key]: e.target.value
+                                                };
+                                                setQueryResult(updatedResult);
+                                              }}
+                                            />
+                                          ) : (
+                                            String(value)
+                                          )}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 py-2">No results to display</p>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex justify-between">
-                        <Button variant="outline">Clear</Button>
-                        <Button>Execute Query</Button>
                       </div>
                     </div>
                   </CardContent>
@@ -354,6 +580,7 @@ ORDER BY item_count DESC;`}
                               <TableHead>Email</TableHead>
                               <TableHead>Reputation</TableHead>
                               <TableHead>Joined Date</TableHead>
+                              <TableHead>Status</TableHead>
                               <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -373,29 +600,92 @@ ORDER BY item_count DESC;`}
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                  <div className="w-24">
+                                  <div className="w-24 flex items-center">
                                     <ErrorBoundary>
-                                      {user.reputation}
+                                      <span className="font-semibold mr-2">{user.reputation}</span>
+                                      <Select defaultValue={user.reputation.toString()} onValueChange={(value) => {
+                                        const updatedUser = {...user, reputation: parseFloat(value)};
+                                        addUser(updatedUser);
+                                        toast({
+                                          title: "Reputation updated",
+                                          description: `${user.username}'s reputation updated to ${value}`,
+                                        });
+                                      }}>
+                                        <SelectTrigger className="w-16 h-7">
+                                          <SelectValue placeholder="Score" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="0">0</SelectItem>
+                                          <SelectItem value="1">1</SelectItem>
+                                          <SelectItem value="2">2</SelectItem>
+                                          <SelectItem value="3">3</SelectItem>
+                                          <SelectItem value="4">4</SelectItem>
+                                          <SelectItem value="5">5</SelectItem>
+                                        </SelectContent>
+                                      </Select>
                                     </ErrorBoundary>
                                   </div>
                                 </TableCell>
                                 <TableCell>{user.joinedDate}</TableCell>
+                                <TableCell>
+                                  <Select defaultValue="active" onValueChange={(value) => {
+                                    toast({
+                                      title: "Status updated",
+                                      description: `${user.username}'s status updated to ${value}`,
+                                    });
+                                  }}>
+                                    <SelectTrigger className="w-28 h-7">
+                                      <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="active">
+                                        <span className="flex items-center gap-1">
+                                          <Check className="h-3 w-3 text-green-500" /> Active
+                                        </span>
+                                      </SelectItem>
+                                      <SelectItem value="inactive">
+                                        <span className="flex items-center gap-1">
+                                          <XCircle className="h-3 w-3 text-red-500" /> Inactive
+                                        </span>
+                                      </SelectItem>
+                                      <SelectItem value="pending">
+                                        <span className="flex items-center gap-1">
+                                          <Clock className="h-3 w-3 text-amber-500" /> Pending
+                                        </span>
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
                                 <TableCell className="text-right">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-blue-600 hover:text-blue-900"
-                                    onClick={() => handleEditUser(user.id)}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-red-600 hover:text-red-900"
-                                  >
-                                    Delete
-                                  </Button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="text-blue-600 hover:text-blue-900"
+                                      >
+                                        Actions
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
+                                        Edit User
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        className="text-purple-600"
+                                        onClick={handleAddAdmin}
+                                      >
+                                        Make Admin
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        className="text-red-600"
+                                        onClick={() => handleDeleteUser(user.id)}
+                                      >
+                                        Delete User
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -467,26 +757,58 @@ ORDER BY item_count DESC;`}
                                   <TableCell>{item.condition}</TableCell>
                                   <TableCell>{owner?.username || 'Unknown'}</TableCell>
                                   <TableCell>
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                      {item.isAvailable ? 'Available' : 'Traded'}
-                                    </span>
+                                    <Select 
+                                      defaultValue={item.isAvailable ? "available" : "traded"}
+                                      onValueChange={(value) => {
+                                        handleUpdateItemStatus(item.id, value === "available");
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-28 h-7">
+                                        <SelectValue placeholder="Status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="available">
+                                          <span className="flex items-center gap-1 text-green-600">
+                                            <Check className="h-3 w-3" /> Available
+                                          </span>
+                                        </SelectItem>
+                                        <SelectItem value="traded">
+                                          <span className="flex items-center gap-1 text-red-600">
+                                            <XCircle className="h-3 w-3" /> Traded
+                                          </span>
+                                        </SelectItem>
+                                        <SelectItem value="booked">
+                                          <span className="flex items-center gap-1 text-amber-600">
+                                            <Clock className="h-3 w-3" /> Booked
+                                          </span>
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="text-blue-600 hover:text-blue-900"
-                                      onClick={() => handleEditItem(item.id)}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="text-red-600 hover:text-red-900"
-                                    >
-                                      Delete
-                                    </Button>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="text-blue-600 hover:text-blue-900"
+                                        >
+                                          Actions
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
+                                          Edit Item
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem 
+                                          className="text-red-600"
+                                          onClick={() => handleDeleteItem(item.id)}
+                                        >
+                                          Delete Item
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </TableCell>
                                 </TableRow>
                               );

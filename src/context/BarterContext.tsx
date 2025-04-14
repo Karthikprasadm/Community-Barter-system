@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { users, items, offers, trades, ratings } from "@/data/mockData";
 import { User, Item, Offer, Trade, Rating, OfferWithDetails } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
-import { UserReputation } from "@/components/ui/UserReputation";
 
 interface AdminUser {
   id: string;
@@ -57,6 +57,11 @@ export const useBarterContext = () => {
   return context;
 };
 
+// Session storage keys
+const SESSION_CURRENT_USER = "barterNexus_currentUser";
+const SESSION_IS_ADMIN = "barterNexus_isAdmin";
+const SESSION_IS_HEAD_ADMIN = "barterNexus_isHeadAdmin";
+
 export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -78,6 +83,41 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   ]);
   
   const { toast } = useToast();
+
+  // Load session on initial mount
+  useEffect(() => {
+    const loadSessionData = () => {
+      const savedUser = sessionStorage.getItem(SESSION_CURRENT_USER);
+      const savedIsAdmin = sessionStorage.getItem(SESSION_IS_ADMIN);
+      const savedIsHeadAdmin = sessionStorage.getItem(SESSION_IS_HEAD_ADMIN);
+      
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+      }
+      
+      if (savedIsAdmin) {
+        setIsAdmin(savedIsAdmin === 'true');
+      }
+      
+      if (savedIsHeadAdmin) {
+        setIsHeadAdmin(savedIsHeadAdmin === 'true');
+      }
+    };
+    
+    loadSessionData();
+  }, []);
+
+  // Save session data when it changes
+  useEffect(() => {
+    if (currentUser) {
+      sessionStorage.setItem(SESSION_CURRENT_USER, JSON.stringify(currentUser));
+    } else {
+      sessionStorage.removeItem(SESSION_CURRENT_USER);
+    }
+    
+    sessionStorage.setItem(SESSION_IS_ADMIN, String(isAdmin));
+    sessionStorage.setItem(SESSION_IS_HEAD_ADMIN, String(isHeadAdmin));
+  }, [currentUser, isAdmin, isHeadAdmin]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     await new Promise(resolve => setTimeout(resolve, 800));
@@ -111,6 +151,9 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setIsAdmin(true);
       setIsHeadAdmin(adminUser.isHeadAdmin);
       
+      // Update activity log (in a real app, this would be a database call)
+      console.log(`Admin login: ${adminUser.username} at ${new Date().toISOString()}`);
+      
       const adminUserData: User = {
         id: adminUser.id,
         username: adminUser.username,
@@ -141,6 +184,9 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setCurrentUser(null);
     setIsAdmin(false);
     setIsHeadAdmin(false);
+    sessionStorage.removeItem(SESSION_CURRENT_USER);
+    sessionStorage.removeItem(SESSION_IS_ADMIN);
+    sessionStorage.removeItem(SESSION_IS_HEAD_ADMIN);
     toast({
       title: "Logged out",
       description: "You have been logged out successfully.",
@@ -169,6 +215,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
+    
+    // Update activity log
+    console.log(`New user registered: ${username} at ${new Date().toISOString()}`);
+    
     toast({
       title: "Success",
       description: "Your account has been created!",
@@ -187,6 +237,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
     
     setItems(prev => [...prev, newItem]);
+    
+    // Update activity log
+    console.log(`New item added: ${itemData.name} by ${currentUser?.username || "admin"} at ${new Date().toISOString()}`);
+    
     toast({
       title: "Item added",
       description: "The item has been listed successfully.",
@@ -195,6 +249,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const updateItem = (updatedItem: Item) => {
     setItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+    
+    // Update activity log
+    console.log(`Item updated: ${updatedItem.name} at ${new Date().toISOString()}`);
+    
     toast({
       title: "Item updated",
       description: "The item has been updated successfully.",
@@ -202,7 +260,12 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const deleteItem = (itemId: string) => {
+    const itemToDelete = itemsState.find(item => item.id === itemId);
     setItems(prev => prev.filter(item => item.id !== itemId));
+    
+    // Update activity log
+    console.log(`Item deleted: ${itemToDelete?.name || itemId} at ${new Date().toISOString()}`);
+    
     toast({
       title: "Item deleted",
       description: "The item has been removed.",
@@ -221,6 +284,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
     
     setOffers(prev => [...prev, newOffer]);
+    
+    // Update activity log
+    console.log(`New offer created: from ${fromUserId} to ${toUserId} at ${new Date().toISOString()}`);
+    
     toast({
       title: "Offer sent",
       description: "Your barter offer has been sent.",
@@ -259,12 +326,18 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           return item;
         }));
         
+        // Update activity log
+        console.log(`Offer accepted: ${offerId} at ${new Date().toISOString()}`);
+        
         toast({
           title: "Offer accepted",
           description: "The barter has been completed successfully.",
         });
       }
     } else {
+      // Update activity log
+      console.log(`Offer rejected: ${offerId} at ${new Date().toISOString()}`);
+      
       toast({
         title: "Offer rejected",
         description: "The barter offer has been declined.",
@@ -294,6 +367,9 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     ));
     
     setRatings(prev => [...prev, newRating]);
+    
+    // Update activity log
+    console.log(`New rating added: ${ratingValue}/5 for user ${userId} by ${raterId} at ${new Date().toISOString()}`);
     
     toast({
       title: "Rating submitted",
@@ -359,6 +435,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
     
     setUsers(prev => [...prev, newUser]);
+    
+    // Update activity log
+    console.log(`Admin added new user: ${userData.username} at ${new Date().toISOString()}`);
+    
     toast({
       title: "User added",
       description: "The user has been added successfully.",
@@ -375,7 +455,12 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
     
+    const userToDelete = usersState.find(user => user.id === userId);
     setUsers(prev => prev.filter(user => user.id !== userId));
+    
+    // Update activity log
+    console.log(`Admin deleted user: ${userToDelete?.username || userId} at ${new Date().toISOString()}`);
+    
     toast({
       title: "User deleted",
       description: "The user has been deleted successfully.",
@@ -393,6 +478,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
     
     setUsers(prev => prev.map(user => user.id === updatedUser.id ? updatedUser : user));
+    
+    // Update activity log
+    console.log(`Admin updated user: ${updatedUser.username} at ${new Date().toISOString()}`);
+    
     toast({
       title: "User updated",
       description: "The user has been updated successfully.",
@@ -408,6 +497,9 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       });
       return;
     }
+    
+    // Check if this is an existing user first
+    const existingUser = usersState.find(user => user.username === username || user.email === email);
     
     if (adminUsersState.some(admin => admin.username === username || admin.email === email)) {
       toast({
@@ -428,6 +520,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
     
     setAdminUsers(prev => [...prev, newAdmin]);
+    
+    // Update activity log
+    console.log(`New admin user created: ${username} by ${currentUser?.username || "head admin"} at ${new Date().toISOString()}`);
+    
     toast({
       title: "Admin added",
       description: `${username} has been granted admin privileges.`,
@@ -455,6 +551,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
     
     setAdminUsers(prev => prev.filter(admin => admin.id !== adminId));
+    
+    // Update activity log
+    console.log(`Admin privileges removed: ${adminToRemove?.username || adminId} by ${currentUser?.username || "head admin"} at ${new Date().toISOString()}`);
+    
     toast({
       title: "Admin removed",
       description: "Admin privileges have been revoked.",
