@@ -22,11 +22,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserReputation } from "@/components/ui/UserReputation";
-import { Loader2, Save, User as UserIcon, X } from "lucide-react";
+import { Loader2, Save, User as UserIcon, X, ImageIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useBarterContext } from "@/context/BarterContext";
 import { User } from "@/types";
 import { motion } from "framer-motion";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface UserEditorProps {
   user?: User;
@@ -44,7 +46,8 @@ const userSchema = z.object({
     .min(0, { message: "Reputation cannot be negative" })
     .max(5, { message: "Reputation cannot exceed 5" })
     .optional(),
-  profileImage: z.string().url({ message: "Please enter a valid URL" }).optional(),
+  profileImage: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal('')),
+  status: z.enum(['active', 'inactive', 'suspended']).default('active'),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -52,13 +55,14 @@ type UserFormValues = z.infer<typeof userSchema>;
 export const UserEditor: React.FC<UserEditorProps> = ({ user, onClose, onSave }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { addUser, updateUser } = useBarterContext();
+  const { addUser, updateUser, isAdmin } = useBarterContext();
   
   const defaultValues: Partial<UserFormValues> = {
     username: user?.username || '',
     email: user?.email || '',
     reputation: user?.reputation || 0,
     profileImage: user?.profileImage || '',
+    status: 'active',
   };
   
   const form = useForm<UserFormValues>({
@@ -81,6 +85,7 @@ export const UserEditor: React.FC<UserEditorProps> = ({ user, onClose, onSave })
           email: values.email,
           reputation: values.reputation!,
           profileImage: values.profileImage,
+          status: values.status,
         });
         
         toast({
@@ -94,6 +99,7 @@ export const UserEditor: React.FC<UserEditorProps> = ({ user, onClose, onSave })
           email: values.email,
           reputation: values.reputation || 0,
           profileImage: values.profileImage,
+          status: values.status,
         });
         
         toast({
@@ -201,10 +207,38 @@ export const UserEditor: React.FC<UserEditorProps> = ({ user, onClose, onSave })
                 
                 <FormField
                   control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select user status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {isAdmin && (
+                <FormField
+                  control={form.control}
                   name="profileImage"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Profile Image URL</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        Profile Image URL (Admin Only)
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com/image.jpg" {...field} />
                       </FormControl>
@@ -212,19 +246,34 @@ export const UserEditor: React.FC<UserEditorProps> = ({ user, onClose, onSave })
                     </FormItem>
                   )}
                 />
-              </div>
+              )}
               
               {form.watch("profileImage") && (
                 <div className="border rounded-md p-4 flex justify-center">
-                  <img 
-                    src={form.watch("profileImage") || "https://via.placeholder.com/150"} 
-                    alt="Profile preview"
-                    className="h-20 w-20 rounded-full object-cover border"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "https://via.placeholder.com/150";
-                    }}
-                  />
+                  <div className="text-center">
+                    <Avatar className="h-20 w-20 mx-auto mb-2">
+                      <AvatarFallback>{form.watch("username").charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-sm text-muted-foreground">
+                      Preview of user avatar initial
+                    </div>
+                    {isAdmin && (
+                      <div className="mt-4">
+                        <img 
+                          src={form.watch("profileImage") || "/placeholder.svg"} 
+                          alt="Profile preview"
+                          className="h-20 w-20 rounded-full object-cover border mx-auto"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Preview of custom image (Admin only)
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>

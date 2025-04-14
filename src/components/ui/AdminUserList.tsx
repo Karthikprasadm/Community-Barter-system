@@ -17,7 +17,7 @@ import {
   CardTitle, 
   CardDescription
 } from "@/components/ui/card";
-import { BadgeCheck, ShieldAlert, Plus, Trash2 } from "lucide-react";
+import { BadgeCheck, ShieldAlert, Plus, Trash2, ImageIcon, Edit } from "lucide-react";
 import { useToast } from '@/components/ui/use-toast';
 import { motion } from 'framer-motion';
 import {
@@ -29,9 +29,10 @@ import {
 
 interface AdminUserListProps {
   onAddAdmin: () => void;
+  onEditUser: (userId: string) => void;
 }
 
-export const AdminUserList: React.FC<AdminUserListProps> = ({ onAddAdmin }) => {
+export const AdminUserList: React.FC<AdminUserListProps> = ({ onAddAdmin, onEditUser }) => {
   const { adminUsers, removeAdminUser, isHeadAdmin, users } = useBarterContext();
   const { toast } = useToast();
   
@@ -132,12 +133,19 @@ export const AdminUserList: React.FC<AdminUserListProps> = ({ onAddAdmin }) => {
                               variant="ghost"
                               size="sm"
                               className="text-blue-600 hover:text-blue-900 hover:bg-blue-50"
-                              disabled={admin.isHeadAdmin || !isHeadAdmin}
+                              disabled={admin.isHeadAdmin && !isHeadAdmin}
                             >
                               Actions
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="cursor-pointer" 
+                              onClick={() => onEditUser(admin.id)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit User
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600 cursor-pointer" 
                               onClick={() => handleRemoveAdmin(admin.id, admin.username, admin.isHeadAdmin)}

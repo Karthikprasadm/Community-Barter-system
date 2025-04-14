@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { useBarterContext } from "@/context/BarterContext";
@@ -16,15 +15,20 @@ import { Item } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ItemCard } from "@/components/ui/ItemCard";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 const ItemDetail = () => {
   const { itemId } = useParams<{ itemId: string }>();
   const { items, users, currentUser, getItemById, getUserById, createOffer, getUserItems, deleteItem } = useBarterContext();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [tradeDialogOpen, setTradeDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [message, setMessage] = useState("");
   
   if (!itemId) return <Navigate to="/marketplace" />;
   
@@ -48,6 +52,10 @@ const ItemDetail = () => {
     
     createOffer(currentUser.id, owner.id, selectedItem, item.id);
     setTradeDialogOpen(false);
+    toast({
+      title: "Offer sent",
+      description: "Your barter offer has been sent to the owner.",
+    });
   };
   
   const handleEdit = () => {
@@ -58,6 +66,21 @@ const ItemDetail = () => {
   const handleDelete = () => {
     deleteItem(itemId);
     navigate("/my-items");
+  };
+  
+  const handleSendMessage = () => {
+    if (!currentUser || !message.trim()) return;
+    
+    // In a real app, this would send the message to a backend
+    console.log(`Message from ${currentUser.id} to ${owner.id}: ${message}`);
+    
+    toast({
+      title: "Message sent",
+      description: `Your message has been sent to ${owner.username}.`,
+    });
+    
+    setMessage("");
+    setMessageDialogOpen(false);
   };
   
   // Get condition color
@@ -129,7 +152,6 @@ const ItemDetail = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Avatar>
-                    <AvatarImage src={owner.profileImage} />
                     <AvatarFallback>{owner.username.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -178,9 +200,45 @@ const ItemDetail = () => {
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <Button variant="outline" className="w-full">
-                      <MessageSquare className="mr-2 h-4 w-4" /> Message
-                    </Button>
+                    <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                          <MessageSquare className="mr-2 h-4 w-4" /> Message
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Message to {owner.username}</DialogTitle>
+                          <DialogDescription>
+                            Send a message about {item.name} to the owner
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 mt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="message">Your message</Label>
+                            <Textarea 
+                              id="message" 
+                              placeholder="I'm interested in this item..." 
+                              value={message}
+                              onChange={(e) => setMessage(e.target.value)}
+                              rows={4}
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setMessageDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={handleSendMessage}
+                              disabled={!message.trim()}
+                              className="bg-barter-primary hover:bg-barter-secondary"
+                            >
+                              Send Message
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                     
                     {canTrade ? (
                       <Dialog open={tradeDialogOpen} onOpenChange={setTradeDialogOpen}>

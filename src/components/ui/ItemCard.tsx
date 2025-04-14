@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 
 interface ItemCardProps {
@@ -77,7 +77,6 @@ export const ItemCard = ({ item, owner, showActions = true }: ItemCardProps) => 
       <CardFooter className="p-4 pt-0 gap-2">
         <Link to={`/profile/${owner.id}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-barter-primary transition-colors flex-1">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={owner.profileImage} />
             <AvatarFallback>{owner.username.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           <span className="truncate">{owner.username}</span>
