@@ -35,7 +35,16 @@ import {
   Save,
   XCircle,
   Check,
-  Clock
+  Clock,
+  PlusCircle,
+  Download,
+  FileCode,
+  Terminal,
+  UserPlus,
+  Edit,
+  Trash2,
+  Server,
+  Settings
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -248,6 +257,14 @@ const AdminDashboard = () => {
     }
   };
 
+  // Updated sample queries for quick access
+  const sampleQueries = [
+    { name: "List all users", query: "SELECT * FROM users ORDER BY joinedDate DESC;" },
+    { name: "Users with most items", query: "SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;" },
+    { name: "Recent trades", query: "SELECT t.id, t.tradeDate, u1.username as from_user, u2.username as to_user\nFROM trades t\nJOIN trades o ON t.offerId = o.id\nJOIN users u1 ON o.fromUserId = u1.id\nJOIN users u2 ON o.toUserId = u2.id\nORDER BY t.tradeDate DESC;" },
+    { name: "Items by category", query: "SELECT category, COUNT(*) as count\nFROM items\nGROUP BY category\nORDER BY count DESC;" }
+  ];
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -396,127 +413,169 @@ const AdminDashboard = () => {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>SQL Query Tool</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Terminal className="h-5 w-5 text-purple-600" />
+                      SQL Query Tool
+                    </CardTitle>
                     <CardDescription>
                       Execute SQL queries against the platform database and edit results
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="bg-gray-800 text-white p-4 rounded-md font-mono text-sm">
-                        <div className="flex items-center justify-between gap-2 mb-2 text-gray-400 border-b border-gray-700 pb-2">
-                          <span>Database SQL Query Console</span>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={handleClearQuery}
-                              className="h-7 px-2 bg-gray-700 hover:bg-gray-600 text-gray-300 border-gray-600"
-                            >
-                              Clear
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={handleExecuteQuery}
-                              disabled={isQueryExecuting}
-                              className="h-7 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
-                            >
-                              {isQueryExecuting ? (
-                                <><RefreshCw className="h-3 w-3 animate-spin" /> Running...</>
-                              ) : (
-                                <><PlayCircle className="h-3 w-3" /> Execute</>
-                              )}
-                            </Button>
-                          </div>
+                  <CardContent className="space-y-6">
+                    {/* Quick Query Templates */}
+                    <div className="flex flex-wrap gap-2">
+                      {sampleQueries.map((q, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => setSqlQuery(q.query)}
+                        >
+                          <FileCode className="h-3 w-3 mr-1" /> {q.name}
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    {/* SQL Editor */}
+                    <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
+                      <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Server className="h-4 w-4 text-blue-400" />
+                          <span className="font-medium text-slate-200">SQL Query Editor</span>
                         </div>
-                        <div className="mb-4">
-                          <p className="text-green-400">-- Type your SQL query below:</p>
-                          <Textarea 
-                            value={sqlQuery}
-                            onChange={(e) => setSqlQuery(e.target.value)}
-                            className="text-gray-300 bg-gray-900 p-2 rounded mt-2 overflow-x-auto h-32 font-mono text-sm resize-none border-gray-700 focus:border-blue-500"
-                            placeholder="Enter SQL query..."
-                          />
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={handleClearQuery}
+                            className="h-7 px-2 bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600"
+                          >
+                            <XCircle className="h-3 w-3 mr-1" /> Clear
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={handleExecuteQuery}
+                            disabled={isQueryExecuting}
+                            className="h-7 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
+                          >
+                            {isQueryExecuting ? (
+                              <><RefreshCw className="h-3 w-3 animate-spin" /> Running...</>
+                            ) : (
+                              <><PlayCircle className="h-3 w-3" /> Execute</>
+                            )}
+                          </Button>
                         </div>
-                        <div className="bg-gray-900 p-2 rounded">
-                          <div className="flex justify-between items-center mb-2">
-                            <p className="text-blue-400">-- Query Results:</p>
-                            <div className="flex gap-2">
-                              {isQueryEditable ? (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setIsQueryEditable(false)}
-                                    className="h-6 px-2 bg-red-700 hover:bg-red-600 text-red-50 border-red-600 flex items-center gap-1"
-                                  >
-                                    <XCircle className="h-3 w-3" /> Cancel
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleSaveResult}
-                                    className="h-6 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
-                                  >
-                                    <Save className="h-3 w-3" /> Save
-                                  </Button>
-                                </>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setIsQueryEditable(true)}
-                                  className="h-6 px-2 bg-blue-700 hover:bg-blue-600 text-blue-50 border-blue-600 flex items-center gap-1"
-                                >
-                                  Edit Results
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {queryResult.length > 0 ? (
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full text-gray-300 text-sm">
-                                <thead>
-                                  <tr className="border-b border-gray-700">
-                                    {Object.keys(queryResult[0]).map((key) => (
-                                      <th key={key} className="py-2 px-3 text-left">{key}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {queryResult.map((row, rowIndex) => (
-                                    <tr key={rowIndex} className="border-b border-gray-800">
-                                      {Object.entries(row).map(([key, value], cellIndex) => (
-                                        <td key={`${rowIndex}-${cellIndex}`} className="py-2 px-3">
-                                          {isQueryEditable ? (
-                                            <Input
-                                              value={String(value)}
-                                              className="bg-gray-800 border-gray-700 text-gray-300 h-7 text-xs"
-                                              onChange={(e) => {
-                                                const updatedResult = [...queryResult];
-                                                updatedResult[rowIndex] = {
-                                                  ...updatedResult[rowIndex],
-                                                  [key]: e.target.value
-                                                };
-                                                setQueryResult(updatedResult);
-                                              }}
-                                            />
-                                          ) : (
-                                            String(value)
-                                          )}
-                                        </td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 py-2">No results to display</p>
+                      </div>
+                      
+                      <div className="p-4">
+                        <p className="text-green-400 text-sm mb-2">-- Type your SQL query below:</p>
+                        <Textarea 
+                          value={sqlQuery}
+                          onChange={(e) => setSqlQuery(e.target.value)}
+                          className="font-mono text-sm bg-slate-950 border-slate-700 text-slate-300 resize-none min-h-[120px] focus-visible:ring-blue-500"
+                          placeholder="Enter SQL query..."
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Query Results */}
+                    <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
+                      <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Database className="h-4 w-4 text-blue-400" />
+                          <span className="font-medium text-slate-200">Query Results</span>
+                          {queryResult.length > 0 && (
+                            <span className="text-xs bg-blue-900 text-blue-200 px-2 py-0.5 rounded">
+                              {queryResult.length} rows
+                            </span>
                           )}
                         </div>
+                        <div className="flex gap-2">
+                          {isQueryEditable ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsQueryEditable(false)}
+                                className="h-6 px-2 bg-red-700 hover:bg-red-600 text-red-50 border-red-600 flex items-center gap-1"
+                              >
+                                <XCircle className="h-3 w-3" /> Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleSaveResult}
+                                className="h-6 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
+                              >
+                                <Save className="h-3 w-3" /> Save Changes
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsQueryEditable(true)}
+                                className="h-6 px-2 bg-blue-700 hover:bg-blue-600 text-blue-50 border-blue-600 flex items-center gap-1"
+                              >
+                                <Edit className="h-3 w-3 mr-1" /> Edit Results
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600 flex items-center gap-1"
+                              >
+                                <Download className="h-3 w-3" /> Export
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="overflow-x-auto">
+                        {queryResult.length > 0 ? (
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-slate-800 text-slate-400 border-b border-slate-700">
+                                {Object.keys(queryResult[0]).map((key) => (
+                                  <th key={key} className="px-4 py-2 text-left font-medium">{key}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {queryResult.map((row, rowIndex) => (
+                                <tr key={rowIndex} className="border-b border-slate-800 hover:bg-slate-800/50">
+                                  {Object.entries(row).map(([key, value], cellIndex) => (
+                                    <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-2">
+                                      {isQueryEditable ? (
+                                        <Input
+                                          value={String(value)}
+                                          className="bg-slate-800 border-slate-700 text-slate-300 h-7 text-xs font-mono"
+                                          onChange={(e) => {
+                                            const updatedResult = [...queryResult];
+                                            updatedResult[rowIndex] = {
+                                              ...updatedResult[rowIndex],
+                                              [key]: e.target.value
+                                            };
+                                            setQueryResult(updatedResult);
+                                          }}
+                                        />
+                                      ) : (
+                                        <span className="font-mono">{String(value)}</span>
+                                      )}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <div className="text-slate-400 p-4 text-center">
+                            No results to display. Execute a query to see data.
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -545,20 +604,59 @@ const AdminDashboard = () => {
                   <Card>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle>User Management</CardTitle>
-                        <Button 
-                          onClick={handleAddUser}
-                          className="gap-1"
-                          size="sm"
-                        >
-                          <Plus className="h-4 w-4" /> Add User
-                        </Button>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="h-5 w-5 text-blue-600" />
+                          User Management
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={handleAddUser}
+                            className="gap-1"
+                            size="sm"
+                            variant="outline"
+                          >
+                            <UserPlus className="h-4 w-4" /> Add Single User
+                          </Button>
+                          <Button 
+                            onClick={handleAddUser}
+                            className="gap-1"
+                            size="sm"
+                          >
+                            <PlusCircle className="h-4 w-4" /> Bulk Add Users
+                          </Button>
+                        </div>
                       </div>
                       <CardDescription>
                         View and manage platform users
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="relative flex-1">
+                          <Input
+                            placeholder="Search users by name, email or ID..."
+                            className="pl-9"
+                          />
+                          <div className="absolute left-3 top-3 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                          </div>
+                        </div>
+                        <Select defaultValue="all">
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All users</SelectItem>
+                            <SelectItem value="active">Active users</SelectItem>
+                            <SelectItem value="inactive">Inactive users</SelectItem>
+                            <SelectItem value="suspended">Suspended users</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="sm" className="gap-1">
+                          <FileDown className="h-4 w-4" /> Export
+                        </Button>
+                      </div>
+                      
                       <div className="rounded-md border">
                         <Table>
                           <TableHeader>
@@ -576,16 +674,7 @@ const AdminDashboard = () => {
                             {users.map((user) => (
                               <TableRow key={user.id}>
                                 <TableCell className="font-mono text-xs">{user.id}</TableCell>
-                                <TableCell className="font-medium flex items-center gap-2">
-                                  {user.profileImage && (
-                                    <img 
-                                      src={user.profileImage} 
-                                      alt={user.username} 
-                                      className="h-6 w-6 rounded-full object-cover"
-                                    />
-                                  )}
-                                  {user.username}
-                                </TableCell>
+                                <TableCell className="font-medium">{user.username}</TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
                                   <div className="w-24 flex items-center">
@@ -616,7 +705,7 @@ const AdminDashboard = () => {
                                 </TableCell>
                                 <TableCell>{user.joinedDate}</TableCell>
                                 <TableCell>
-                                  <Select defaultValue="active" onValueChange={(value) => {
+                                  <Select defaultValue={user.status || "active"} onValueChange={(value) => {
                                     toast({
                                       title: "Status updated",
                                       description: `${user.username}'s status updated to ${value}`,
@@ -636,9 +725,9 @@ const AdminDashboard = () => {
                                           <XCircle className="h-3 w-3 text-red-500" /> Inactive
                                         </span>
                                       </SelectItem>
-                                      <SelectItem value="pending">
+                                      <SelectItem value="suspended">
                                         <span className="flex items-center gap-1">
-                                          <Clock className="h-3 w-3 text-amber-500" /> Pending
+                                          <Clock className="h-3 w-3 text-amber-500" /> Suspended
                                         </span>
                                       </SelectItem>
                                     </SelectContent>
@@ -657,20 +746,20 @@ const AdminDashboard = () => {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                       <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
-                                        Edit User
+                                        <Edit className="h-4 w-4 mr-2" /> Edit User
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
                                         className="text-purple-600"
                                         onClick={handleAddAdmin}
                                       >
-                                        Make Admin
+                                        <ShieldCheck className="h-4 w-4 mr-2" /> Make Admin
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem 
                                         className="text-red-600"
                                         onClick={() => handleDeleteUser(user.id)}
                                       >
-                                        Delete User
+                                        <Trash2 className="h-4 w-4 mr-2" /> Delete User
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -730,155 +819,3 @@ const AdminDashboard = () => {
                               <TableHead>Category</TableHead>
                               <TableHead>Condition</TableHead>
                               <TableHead>Owner</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {items.map((item) => {
-                              const owner = users.find(u => u.id === item.userId);
-                              return (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-mono text-xs">{item.id}</TableCell>
-                                  <TableCell className="font-medium">{item.name}</TableCell>
-                                  <TableCell>{item.category}</TableCell>
-                                  <TableCell>{item.condition}</TableCell>
-                                  <TableCell>{owner?.username || 'Unknown'}</TableCell>
-                                  <TableCell>
-                                    <Select 
-                                      defaultValue={item.isAvailable ? "available" : "traded"}
-                                      onValueChange={(value) => {
-                                        handleUpdateItemStatus(item.id, value === "available");
-                                      }}
-                                    >
-                                      <SelectTrigger className="w-28 h-7">
-                                        <SelectValue placeholder="Status" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="available">
-                                          <span className="flex items-center gap-1 text-green-600">
-                                            <Check className="h-3 w-3" /> Available
-                                          </span>
-                                        </SelectItem>
-                                        <SelectItem value="traded">
-                                          <span className="flex items-center gap-1 text-red-600">
-                                            <XCircle className="h-3 w-3" /> Traded
-                                          </span>
-                                        </SelectItem>
-                                        <SelectItem value="booked">
-                                          <span className="flex items-center gap-1 text-amber-600">
-                                            <Clock className="h-3 w-3" /> Booked
-                                          </span>
-                                        </SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="text-blue-600 hover:text-blue-900"
-                                        >
-                                          Actions
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
-                                          Edit Item
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem 
-                                          className="text-red-600"
-                                          onClick={() => handleDeleteItem(item.id)}
-                                        >
-                                          Delete Item
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="activity" key="activity">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ErrorBoundary>
-                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                    <ActivityLog />
-                  </Suspense>
-                </ErrorBoundary>
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="analytics" key="analytics">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ErrorBoundary>
-                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                    <AdminCharts />
-                  </Suspense>
-                </ErrorBoundary>
-                
-                {isHeadAdmin && (
-                  <div className="mt-8">
-                    {showAdminEditor ? (
-                      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                        <AdminUserEditor
-                          onClose={() => setShowAdminEditor(false)}
-                          onSave={handleAdminSaved}
-                        />
-                      </Suspense>
-                    ) : (
-                      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                        <AdminUserList 
-                          onAddAdmin={handleAddAdmin} 
-                          onEditUser={handleEditUser}
-                        />
-                      </Suspense>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="export" key="export">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ErrorBoundary>
-                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                    <DataExport />
-                  </Suspense>
-                </ErrorBoundary>
-              </motion.div>
-            </TabsContent>
-          </AnimatePresence>
-        </Tabs>
-      </main>
-    </div>
-  );
-};
-
-export default AdminDashboard;
