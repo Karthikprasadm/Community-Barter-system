@@ -117,7 +117,7 @@ const AdminDashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {[1, 2, a3].map(i => (
+            {[1, 2, 3].map(i => (
               <Skeleton key={i} className="h-36" />
             ))}
           </div>

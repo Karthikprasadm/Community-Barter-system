@@ -214,7 +214,7 @@ export const UserEditor: React.FC<UserEditorProps> = ({ user, onClose, onSave })
                 />
               </div>
               
-              {field => field.value && (
+              {form.watch("profileImage") && (
                 <div className="border rounded-md p-4 flex justify-center">
                   <img 
                     src={form.watch("profileImage") || "https://via.placeholder.com/150"} 
