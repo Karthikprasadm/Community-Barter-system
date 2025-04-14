@@ -1,4 +1,3 @@
-
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBarterContext } from "@/context/BarterContext";
@@ -43,7 +42,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useToast } from "@/components/ui/use-toast";
 
-// Lazily load complex components
 const ActivityLog = lazy(() => import('@/components/ui/ActivityLog').then(mod => ({ default: mod.ActivityLog })));
 const DataExport = lazy(() => import('@/components/ui/DataExport').then(mod => ({ default: mod.DataExport })));
 const UserEditor = lazy(() => import('@/components/ui/UserEditor').then(mod => ({ default: mod.UserEditor })));
@@ -85,7 +83,6 @@ const AdminDashboard = () => {
   const [isQueryEditable, setIsQueryEditable] = useState(false);
   const { toast } = useToast();
   
-  // Simulate loading state for smoother UX
   useEffect(() => {
     if (isAdmin) {
       const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -93,14 +90,12 @@ const AdminDashboard = () => {
     }
   }, [isAdmin]);
 
-  // Redirect if not admin
   useEffect(() => {
     if (!isAdmin) {
       navigate("/admin-login");
     }
   }, [isAdmin, navigate]);
 
-  // Execute initial query
   useEffect(() => {
     if (!isLoading && activeTab === 'database') {
       handleExecuteQuery();
@@ -108,7 +103,7 @@ const AdminDashboard = () => {
   }, [isLoading, activeTab]);
 
   if (!isAdmin) {
-    return null; // Will redirect due to the useEffect
+    return null;
   }
   
   const userToEdit = editingUser ? users.find(u => u.id === editingUser) : undefined;
@@ -155,10 +150,8 @@ const AdminDashboard = () => {
   const handleExecuteQuery = () => {
     setIsQueryExecuting(true);
     
-    // Mock query execution with timeout
     setTimeout(() => {
       try {
-        // Create mock query result based on the query
         let result = [];
         
         if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('users')) {
@@ -187,7 +180,6 @@ const AdminDashboard = () => {
             notes: trade.notes || 'No notes'
           }));
         } else {
-          // Default query result
           result = users.map(user => ({
             username: user.username,
             item_count: items.filter(item => item.userId === user.id).length
@@ -220,8 +212,6 @@ const AdminDashboard = () => {
 
   const handleSaveResult = () => {
     try {
-      // Here we would typically save changes to the database
-      // For this mock, we'll just show a success toast
       toast({
         title: "Changes saved",
         description: "Your changes have been saved to the database",
@@ -309,7 +299,6 @@ const AdminDashboard = () => {
           </Button>
         </div>
         
-        {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -369,7 +358,6 @@ const AdminDashboard = () => {
           </motion.div>
         </div>
         
-        {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-6 mb-8">
             <TabsTrigger value="database" className="flex items-center gap-2 py-3">
@@ -861,7 +849,10 @@ const AdminDashboard = () => {
                       </Suspense>
                     ) : (
                       <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                        <AdminUserList onAddAdmin={handleAddAdmin} />
+                        <AdminUserList 
+                          onAddAdmin={handleAddAdmin} 
+                          onEditUser={handleEditUser}
+                        />
                       </Suspense>
                     )}
                   </div>

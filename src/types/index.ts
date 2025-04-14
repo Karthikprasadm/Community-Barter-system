@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string;
@@ -6,6 +5,7 @@ export interface User {
   reputation: number;
   joinedDate: string;
   profileImage?: string;
+  status?: 'active' | 'inactive' | 'suspended';
 }
 
 export interface Item {

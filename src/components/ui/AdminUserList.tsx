@@ -168,3 +168,5 @@ export const AdminUserList: React.FC<AdminUserListProps> = ({ onAddAdmin, onEdit
     </motion.div>
   );
 };
+
+export default AdminUserList;
