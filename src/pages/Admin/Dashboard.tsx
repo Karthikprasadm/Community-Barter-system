@@ -20,7 +20,8 @@ import {
   RefreshCw, 
   Plus,
   FileDown,
-  Activity 
+  Activity,
+  BarChart3 
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +32,9 @@ const ActivityLog = lazy(() => import('@/components/ui/ActivityLog').then(mod =>
 const DataExport = lazy(() => import('@/components/ui/DataExport').then(mod => ({ default: mod.DataExport })));
 const UserEditor = lazy(() => import('@/components/ui/UserEditor').then(mod => ({ default: mod.UserEditor })));
 const ItemEditor = lazy(() => import('@/components/ui/ItemEditor').then(mod => ({ default: mod.ItemEditor })));
+const AdminUserEditor = lazy(() => import('@/components/ui/AdminUserEditor').then(mod => ({ default: mod.AdminUserEditor })));
+const AdminUserList = lazy(() => import('@/components/ui/AdminUserList').then(mod => ({ default: mod.AdminUserList })));
+const AdminCharts = lazy(() => import('@/components/ui/AdminCharts').then(mod => ({ default: mod.AdminCharts })));
 
 import {
   Table,
@@ -42,11 +46,12 @@ import {
 } from "@/components/ui/table";
 
 const AdminDashboard = () => {
-  const { isAdmin, users, items, trades } = useBarterContext();
+  const { isAdmin, isHeadAdmin, users, items, trades } = useBarterContext();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [showUserEditor, setShowUserEditor] = useState(false);
   const [showItemEditor, setShowItemEditor] = useState(false);
+  const [showAdminEditor, setShowAdminEditor] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("database");
@@ -102,6 +107,14 @@ const AdminDashboard = () => {
     setShowItemEditor(false);
     setEditingItem(null);
   };
+  
+  const handleAddAdmin = () => {
+    setShowAdminEditor(true);
+  };
+  
+  const handleAdminSaved = () => {
+    setShowAdminEditor(false);
+  };
 
   if (isLoading) {
     return (
@@ -139,6 +152,11 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <ShieldCheck className="h-8 w-8 text-purple-600" />
               Admin Dashboard
+              {isHeadAdmin && (
+                <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                  Head Admin
+                </span>
+              )}
             </h1>
             <p className="text-gray-600 mt-1">Manage all aspects of the BarterNexus platform</p>
           </div>
@@ -156,9 +174,9 @@ const AdminDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
+            <Card className="border-blue-100 hover:border-blue-200 transition-colors">
+              <CardHeader className="pb-2 bg-blue-50">
+                <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
                   <Users className="h-5 w-5 text-blue-500" />
                   Total Users
                 </CardTitle>
@@ -175,9 +193,9 @@ const AdminDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
+            <Card className="border-green-100 hover:border-green-200 transition-colors">
+              <CardHeader className="pb-2 bg-green-50">
+                <CardTitle className="text-lg flex items-center gap-2 text-green-700">
                   <Package className="h-5 w-5 text-green-500" />
                   Active Items
                 </CardTitle>
@@ -194,9 +212,9 @@ const AdminDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
           >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
+            <Card className="border-amber-100 hover:border-amber-200 transition-colors">
+              <CardHeader className="pb-2 bg-amber-50">
+                <CardTitle className="text-lg flex items-center gap-2 text-amber-700">
                   <RefreshCw className="h-5 w-5 text-amber-500" />
                   Completed Trades
                 </CardTitle>
@@ -211,7 +229,7 @@ const AdminDashboard = () => {
         
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-5 mb-8">
+          <TabsList className="grid grid-cols-6 mb-8">
             <TabsTrigger value="database" className="flex items-center gap-2 py-3">
               <Database className="h-4 w-4" /> 
               Database Query
@@ -227,6 +245,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="activity" className="flex items-center gap-2 py-3">
               <Activity className="h-4 w-4" />
               Activity Log
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2 py-3">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
             </TabsTrigger>
             <TabsTrigger value="export" className="flex items-center gap-2 py-3">
               <FileDown className="h-4 w-4" />
@@ -490,6 +512,38 @@ ORDER BY item_count DESC;`}
                     <ActivityLog />
                   </Suspense>
                 </ErrorBoundary>
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="analytics" key="analytics">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ErrorBoundary>
+                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                    <AdminCharts />
+                  </Suspense>
+                </ErrorBoundary>
+                
+                {isHeadAdmin && (
+                  <div className="mt-8">
+                    {showAdminEditor ? (
+                      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                        <AdminUserEditor
+                          onClose={() => setShowAdminEditor(false)}
+                          onSave={handleAdminSaved}
+                        />
+                      </Suspense>
+                    ) : (
+                      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                        <AdminUserList onAddAdmin={handleAddAdmin} />
+                      </Suspense>
+                    )}
+                  </div>
+                )}
               </motion.div>
             </TabsContent>
             

@@ -1,13 +1,23 @@
-
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { users, items, offers, trades, ratings } from "@/data/mockData";
 import { User, Item, Offer, Trade, Rating, OfferWithDetails } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
 import { UserReputation } from "@/components/ui/UserReputation";
 
+interface AdminUser {
+  id: string;
+  username: string;
+  email: string;
+  isHeadAdmin: boolean;
+  createdBy?: string;
+  createdAt: string;
+}
+
 interface BarterContextType {
   currentUser: User | null;
   isAdmin: boolean;
+  isHeadAdmin: boolean;
+  adminUsers: AdminUser[];
   users: User[];
   items: Item[];
   offers: Offer[];
@@ -31,6 +41,10 @@ interface BarterContextType {
   addUser: (user: Omit<User, "id" | "joinedDate">) => void;
   deleteUser: (userId: string) => void;
   updateUser: (user: User) => void;
+  
+  addAdminUser: (username: string, email: string) => void;
+  removeAdminUser: (adminId: string) => void;
+  getAdminUserById: (adminId: string) => AdminUser | undefined;
 }
 
 const BarterContext = createContext<BarterContextType | undefined>(undefined);
@@ -46,23 +60,33 @@ export const useBarterContext = () => {
 export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isHeadAdmin, setIsHeadAdmin] = useState<boolean>(false);
   const [itemsState, setItems] = useState<Item[]>(items);
   const [offersState, setOffers] = useState<Offer[]>(offers);
   const [tradesState, setTrades] = useState<Trade[]>(trades);
   const [ratingsState, setRatings] = useState<Rating[]>(ratings);
   const [usersState, setUsers] = useState<User[]>(users);
+  
+  const [adminUsersState, setAdminUsers] = useState<AdminUser[]>([
+    {
+      id: "admin1",
+      username: "wingspawn",
+      email: "admin@barternexus.com",
+      isHeadAdmin: true,
+      createdAt: new Date().toISOString().split('T')[0],
+    }
+  ]);
+  
   const { toast } = useToast();
 
-  // Sign in a user
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    // In a real app, you would validate credentials against a backend
     const user = usersState.find(u => u.email === email);
     if (user) {
       setCurrentUser(user);
       setIsAdmin(false);
+      setIsHeadAdmin(false);
       toast({
         title: "Success",
         description: `Welcome back, ${user.username}!`,
@@ -78,28 +102,28 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return false;
   };
 
-  // Admin login
   const adminLogin = async (username: string, password: string): Promise<boolean> => {
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    // Check admin credentials (hardcoded for demo)
-    if (username === 'wingspawn' && password === 'wingspawn') {
+    const adminUser = adminUsersState.find(admin => admin.username === username);
+    
+    if (adminUser && password === "wingspawn") {
       setIsAdmin(true);
-      // Create a virtual admin user
-      const adminUser: User = {
-        id: "admin",
-        username: "Admin",
-        email: "admin@barternexus.com",
+      setIsHeadAdmin(adminUser.isHeadAdmin);
+      
+      const adminUserData: User = {
+        id: adminUser.id,
+        username: adminUser.username,
+        email: adminUser.email,
         reputation: 5,
-        joinedDate: new Date().toISOString().split('T')[0],
+        joinedDate: adminUser.createdAt,
         profileImage: "https://images.unsplash.com/photo-1633332755192-727a05c4013d"
       };
-      setCurrentUser(adminUser);
+      setCurrentUser(adminUserData);
       
       toast({
         title: "Admin Access Granted",
-        description: "You now have admin privileges.",
+        description: adminUser.isHeadAdmin ? "You have head admin privileges." : "You have admin privileges.",
         variant: "default",
       });
       return true;
@@ -113,22 +137,19 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return false;
   };
 
-  // Sign out
   const logout = () => {
     setCurrentUser(null);
     setIsAdmin(false);
+    setIsHeadAdmin(false);
     toast({
       title: "Logged out",
       description: "You have been logged out successfully.",
     });
   };
 
-  // Register a new user
   const register = async (username: string, email: string, password: string): Promise<boolean> => {
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    // Check if email already exists
     if (usersState.some(u => u.email === email)) {
       toast({
         variant: "destructive",
@@ -138,7 +159,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return false;
     }
     
-    // In a real app, this would be done on the backend
     const newUser: User = {
       id: `user${usersState.length + 1}`,
       username,
@@ -156,7 +176,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return true;
   };
 
-  // Add a new item
   const addItem = (itemData: Omit<Item, "id" | "userId" | "postedDate">) => {
     if (!currentUser && !isAdmin) return;
     
@@ -174,7 +193,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Update an existing item
   const updateItem = (updatedItem: Item) => {
     setItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
     toast({
@@ -183,7 +201,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Delete an item
   const deleteItem = (itemId: string) => {
     setItems(prev => prev.filter(item => item.id !== itemId));
     toast({
@@ -192,7 +209,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Create a new barter offer
   const createOffer = (fromUserId: string, toUserId: string, itemOfferedId: string, itemRequestedId: string) => {
     const newOffer: Offer = {
       id: `offer${offersState.length + 1}`,
@@ -211,9 +227,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Respond to an offer (accept or reject)
   const respondToOffer = (offerId: string, accept: boolean) => {
-    // Update offer status
     setOffers(prev => prev.map(offer => {
       if (offer.id === offerId) {
         return {
@@ -224,7 +238,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return offer;
     }));
     
-    // If accepted, create a trade
     if (accept) {
       const acceptedOffer = offersState.find(o => o.id === offerId);
       if (acceptedOffer) {
@@ -236,7 +249,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         
         setTrades(prev => [...prev, newTrade]);
         
-        // Update item availability
         setItems(prev => prev.map(item => {
           if (item.id === acceptedOffer.itemOfferedId || item.id === acceptedOffer.itemRequestedId) {
             return {
@@ -260,7 +272,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  // Add a rating after a trade
   const addRating = (userId: string, raterId: string, tradeId: string, ratingValue: number, comment?: string) => {
     const newRating: Rating = {
       id: `rating${ratingsState.length + 1}`,
@@ -272,12 +283,10 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       ratingDate: new Date().toISOString().split('T')[0],
     };
     
-    // More sophisticated reputation calculation
     const userRatings = ratingsState.filter(rating => rating.userId === userId);
     const totalRatings = userRatings.length + 1;
     const avgRating = (userRatings.reduce((sum, r) => sum + r.ratingValue, 0) + ratingValue) / totalRatings;
     
-    // Update user reputation
     setUsers(prev => prev.map(user => 
       user.id === userId 
         ? { ...user, reputation: Number(avgRating.toFixed(1)) }
@@ -292,22 +301,18 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Get all items for a specific user
   const getUserItems = (userId: string) => {
     return itemsState.filter(item => item.userId === userId);
   };
 
-  // Get item by ID
   const getItemById = (itemId: string) => {
     return itemsState.find(item => item.id === itemId);
   };
 
-  // Get user by ID
   const getUserById = (userId: string) => {
     return usersState.find(user => user.id === userId);
   };
 
-  // Get pending offers for a user (both sent and received)
   const getPendingOffersForUser = (userId: string) => {
     const pendingOffers = offersState.filter(
       offer => (offer.fromUserId === userId || offer.toUserId === userId) && offer.status === "pending"
@@ -329,7 +334,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Get all trades for a user
   const getUserTrades = (userId: string) => {
     const userOfferIds = offersState
       .filter(offer => (offer.fromUserId === userId || offer.toUserId === userId) && offer.status === "accepted")
@@ -338,7 +342,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return tradesState.filter(trade => userOfferIds.includes(trade.offerId));
   };
 
-  // Admin-only: Add a new user
   const addUser = (userData: Omit<User, "id" | "joinedDate">) => {
     if (!isAdmin) {
       toast({
@@ -362,7 +365,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Admin-only: Delete a user
   const deleteUser = (userId: string) => {
     if (!isAdmin) {
       toast({
@@ -380,7 +382,6 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
-  // Admin-only: Update a user
   const updateUser = (updatedUser: User) => {
     if (!isAdmin) {
       toast({
@@ -398,9 +399,77 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
+  const addAdminUser = (username: string, email: string) => {
+    if (!isAdmin || !isHeadAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only the head administrator can create new admin users.",
+      });
+      return;
+    }
+    
+    if (adminUsersState.some(admin => admin.username === username || admin.email === email)) {
+      toast({
+        variant: "destructive",
+        title: "Admin creation failed",
+        description: "An admin with this username or email already exists.",
+      });
+      return;
+    }
+    
+    const newAdmin: AdminUser = {
+      id: `admin${adminUsersState.length + 1}`,
+      username,
+      email,
+      isHeadAdmin: false,
+      createdBy: currentUser?.username,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    
+    setAdminUsers(prev => [...prev, newAdmin]);
+    toast({
+      title: "Admin added",
+      description: `${username} has been granted admin privileges.`,
+    });
+  };
+
+  const removeAdminUser = (adminId: string) => {
+    if (!isAdmin || !isHeadAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only the head administrator can remove admin users.",
+      });
+      return;
+    }
+    
+    const adminToRemove = adminUsersState.find(admin => admin.id === adminId);
+    if (adminToRemove?.isHeadAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Cannot remove head admin",
+        description: "The head administrator cannot be removed.",
+      });
+      return;
+    }
+    
+    setAdminUsers(prev => prev.filter(admin => admin.id !== adminId));
+    toast({
+      title: "Admin removed",
+      description: "Admin privileges have been revoked.",
+    });
+  };
+
+  const getAdminUserById = (adminId: string) => {
+    return adminUsersState.find(admin => admin.id === adminId);
+  };
+
   const contextValue: BarterContextType = {
     currentUser,
     isAdmin,
+    isHeadAdmin,
+    adminUsers: adminUsersState,
     users: usersState,
     items: itemsState,
     offers: offersState,
@@ -424,6 +493,9 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     addUser,
     deleteUser,
     updateUser,
+    addAdminUser,
+    removeAdminUser,
+    getAdminUserById,
   };
 
   return (
