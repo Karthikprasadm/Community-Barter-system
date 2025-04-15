@@ -29,6 +29,8 @@ import { motion } from "framer-motion";
 interface AdminUserEditorProps {
   onClose: () => void;
   onSave: () => void;
+  onEditUser?: (userId: string) => void;
+  onAddAdmin?: () => void;
 }
 
 const adminUserSchema = z.object({
@@ -41,7 +43,7 @@ const adminUserSchema = z.object({
 
 type AdminUserFormValues = z.infer<typeof adminUserSchema>;
 
-export const AdminUserEditor: React.FC<AdminUserEditorProps> = ({ onClose, onSave }) => {
+export const AdminUserEditor: React.FC<AdminUserEditorProps> = ({ onClose, onSave, onEditUser, onAddAdmin }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { addAdminUser, isHeadAdmin } = useBarterContext();
@@ -181,3 +183,4 @@ export const AdminUserEditor: React.FC<AdminUserEditorProps> = ({ onClose, onSav
     </motion.div>
   );
 };
+

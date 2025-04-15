@@ -1,4 +1,3 @@
-
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBarterContext } from "@/context/BarterContext";
@@ -946,8 +945,6 @@ const AdminDashboard = () => {
               <AdminUserEditor 
                 onClose={() => setShowAdminEditor(false)}
                 onSave={handleAdminSaved}
-                onEditUser={handleEditUser}
-                onAddAdmin={handleAddAdmin}
               />
             </Suspense>
           </ErrorBoundary>
