@@ -89,8 +89,8 @@ const Index = () => {
               </div>
               <div className="hidden md:block">
                 <img
-                  src="/lovable-uploads/39bdf859-4192-4bc4-8d6b-6af2b98f111f.png"
-                  alt="BarterNexus Logo"
+                  src="/lovable-uploads/cc89ce99-fde5-40b2-9f84-092743fe9d07.png"
+                  alt="Community Barter System Logo"
                   className="rounded-lg shadow-lg max-h-96 object-contain"
                 />
               </div>
