@@ -4,38 +4,22 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatisticsGrid } from "@/components/ui/statistics";
-import { ItemGrid } from "@/components/ui/ItemGrid";
-import { useBarterContext } from "@/context/BarterContext";
 import { 
   ArrowRight, 
   CheckCircle2, 
   Repeat2, 
   ShieldCheck, 
-  Star, 
   Package, 
   Bike, 
   BookOpen, 
   Utensils, 
-  Shirt, 
-  HelpCircle
+  Shirt
 } from "lucide-react";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion";
+import { useBarterContext } from "@/context/BarterContext";
 
 const Index = () => {
   const { items, users } = useBarterContext();
   
-  // Get the most recent items
-  const recentItems = [...items]
-    .sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime())
-    .filter(item => item.isAvailable)
-    .slice(0, 4);
-
   // Featured categories
   const categories = [
     { 
@@ -67,52 +51,6 @@ const Index = () => {
       icon: <Shirt className="h-8 w-8 text-barter-accent" />,
       description: "Apparel for all ages and seasons",
       itemCount: 83
-    }
-  ];
-
-  // Testimonials
-  const testimonials = [
-    {
-      text: "I traded my old laptop for a mountain bike that I've been wanting for months. This platform saved me hundreds of dollars!",
-      author: "Michael K.",
-      location: "Portland, OR",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80"
-    },
-    {
-      text: "As a minimalist, I love being able to exchange items without accumulating more stuff. The community here is so supportive and honest.",
-      author: "Sarah T.",
-      location: "Austin, TX",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80"
-    },
-    {
-      text: "Found a vintage camera in exchange for some books I no longer needed. The transaction was smooth and the other trader was great to work with.",
-      author: "David L.",
-      location: "Chicago, IL",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80"
-    }
-  ];
-
-  // FAQ items
-  const faqItems = [
-    {
-      question: "How does bartering work on this platform?",
-      answer: "Users list items they're willing to trade and browse items others have posted. When you find something you want, you make an offer with your own items. If accepted, you arrange to meet and exchange items."
-    },
-    {
-      question: "Is there any cost to use the platform?",
-      answer: "No, our platform is completely free to use. We don't charge any fees for listing items or making trades."
-    },
-    {
-      question: "How do I know I can trust other traders?",
-      answer: "Our platform includes a reputation system where users rate each other after completed trades. You can view a user's rating before deciding to trade with them."
-    },
-    {
-      question: "What if someone doesn't show up for a trade?",
-      answer: "If a trader doesn't show up, you can report the incident through our platform. Users who repeatedly fail to complete trades may have their accounts restricted."
-    },
-    {
-      question: "Can I trade services instead of physical items?",
-      answer: "Yes! Many users trade services like tutoring, home repairs, or professional skills alongside physical items."
     }
   ];
 
@@ -240,121 +178,6 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
-          </div>
-        </section>
-        
-        {/* Testimonials Section */}
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-barter-primary">Community Testimonials</h2>
-              <p className="text-gray-600 mt-2 max-w-2xl mx-auto">
-                Hear what our members are saying about their barter experiences
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {testimonials.map((testimonial, index) => (
-                <Card key={index} className="border-none shadow-md relative">
-                  <CardContent className="pt-10 pb-6">
-                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-                      <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-white shadow-md">
-                        <img src={testimonial.avatar} alt={testimonial.author} className="h-full w-full object-cover" />
-                      </div>
-                    </div>
-                    <div className="flex justify-center mb-4">
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                    </div>
-                    <p className="text-gray-700 italic text-center mb-4">"{testimonial.text}"</p>
-                    <div className="text-center">
-                      <p className="font-semibold text-barter-primary">{testimonial.author}</p>
-                      <p className="text-sm text-gray-500">{testimonial.location}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-        
-        {/* Recent Items Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold text-barter-primary">Recently Added Items</h2>
-              <Button variant="ghost" asChild className="gap-1">
-                <Link to="/marketplace">
-                  View All <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            
-            <ItemGrid items={recentItems} users={users} />
-          </div>
-        </section>
-        
-        {/* FAQ Section */}
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-barter-primary">Frequently Asked Questions</h2>
-              <p className="text-gray-600 mt-2 max-w-2xl mx-auto">
-                Find answers to common questions about our bartering platform
-              </p>
-            </div>
-            
-            <div className="max-w-3xl mx-auto">
-              <Accordion type="single" collapsible className="bg-white p-6 rounded-lg shadow-md">
-                {faqItems.map((item, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-left font-medium text-barter-primary hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <HelpCircle className="h-5 w-5 text-barter-accent" />
-                        {item.question}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-gray-600 pt-2 pb-4 px-7">
-                      {item.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          </div>
-        </section>
-        
-        {/* Community Stats Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-barter-primary">Community Stats</h2>
-              <p className="text-gray-600 mt-2 max-w-2xl mx-auto">
-                See how our barter community is growing and thriving
-              </p>
-            </div>
-            
-            <StatisticsGrid />
-          </div>
-        </section>
-        
-        {/* CTA Section */}
-        <section className="py-16 bg-barter-primary text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to Join Our Barter Community?</h2>
-            <p className="text-xl opacity-90 max-w-2xl mx-auto mb-8">
-              Start trading items with people in your area today and discover the benefits of a money-free exchange system.
-            </p>
-            <Button 
-              size="lg" 
-              asChild 
-              className="bg-barter-accent hover:bg-barter-accent/90 text-white shadow-lg transform transition-all hover:scale-105 active:scale-95"
-            >
-              <Link to="/register">Sign Up Now</Link>
-            </Button>
           </div>
         </section>
       </main>
