@@ -5,7 +5,6 @@ import { Item } from "@/types";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { ItemGrid } from "@/components/ui/ItemGrid";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { useSearchParams } from "react-router-dom";
 
 const Marketplace = () => {
@@ -87,7 +86,6 @@ const Marketplace = () => {
           </div>
         )}
       </main>
-      <Footer />
     </div>
   );
 };
