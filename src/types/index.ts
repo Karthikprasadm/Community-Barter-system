@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string;
@@ -28,6 +29,7 @@ export interface Offer {
   itemRequestedId: string;
   status: 'pending' | 'accepted' | 'rejected';
   offerDate: string;
+  message?: string;
 }
 
 export interface Trade {
@@ -60,4 +62,14 @@ export interface OfferWithDetails extends Offer {
 
 export interface TradeWithDetails extends Trade {
   offer: OfferWithDetails;
+}
+
+export interface Message {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  content: string;
+  timestamp: string;
+  isRead: boolean;
+  relatedItemId?: string;
 }

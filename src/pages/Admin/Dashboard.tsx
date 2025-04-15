@@ -1,3 +1,4 @@
+
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBarterContext } from "@/context/BarterContext";
@@ -238,12 +239,20 @@ const AdminDashboard = () => {
   const handleDeleteUser = (userId: string) => {
     if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
       deleteUser(userId);
+      toast({
+        title: "User deleted",
+        description: "The user has been removed from the system",
+      });
     }
   };
 
   const handleDeleteItem = (itemId: string) => {
     if (window.confirm("Are you sure you want to delete this item? This action cannot be undone.")) {
       deleteItem(itemId);
+      toast({
+        title: "Item deleted",
+        description: "The item has been removed from the marketplace",
+      });
     }
   };
 
@@ -254,10 +263,14 @@ const AdminDashboard = () => {
         ...item,
         isAvailable: status
       });
+      toast({
+        title: "Item status updated",
+        description: `Item is now ${status ? 'available' : 'unavailable'}`,
+      });
     }
   };
 
-  // Updated sample queries for quick access
+  // Sample queries for quick access
   const sampleQueries = [
     { name: "List all users", query: "SELECT * FROM users ORDER BY joinedDate DESC;" },
     { name: "Users with most items", query: "SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;" },
@@ -819,3 +832,129 @@ const AdminDashboard = () => {
                               <TableHead>Category</TableHead>
                               <TableHead>Condition</TableHead>
                               <TableHead>Owner</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Posted Date</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {items.map((item) => {
+                              const owner = users.find(u => u.id === item.userId);
+                              return (
+                                <TableRow key={item.id}>
+                                  <TableCell className="font-mono text-xs">{item.id}</TableCell>
+                                  <TableCell className="font-medium">{item.name}</TableCell>
+                                  <TableCell>{item.category}</TableCell>
+                                  <TableCell>{item.condition}</TableCell>
+                                  <TableCell>{owner?.username || 'Unknown'}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center">
+                                      <span className={`mr-2 h-2 w-2 rounded-full ${item.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                      <span>{item.isAvailable ? 'Available' : 'Not Available'}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{item.postedDate}</TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm">Actions</Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
+                                          <Edit className="h-4 w-4 mr-2" /> Edit Item
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleUpdateItemStatus(item.id, !item.isAvailable)}>
+                                          {item.isAvailable ? (
+                                            <>
+                                              <XCircle className="h-4 w-4 mr-2 text-orange-500" /> Mark Unavailable
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Check className="h-4 w-4 mr-2 text-green-500" /> Mark Available
+                                            </>
+                                          )}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleDeleteItem(item.id)}>
+                                          <Trash2 className="h-4 w-4 mr-2 text-red-500" /> Delete Item
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="activity" key="activity">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ErrorBoundary>
+                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                    <ActivityLog />
+                  </Suspense>
+                </ErrorBoundary>
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="analytics" key="analytics">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ErrorBoundary>
+                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                    <AdminCharts />
+                  </Suspense>
+                </ErrorBoundary>
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="export" key="export">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ErrorBoundary>
+                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                    <DataExport />
+                  </Suspense>
+                </ErrorBoundary>
+              </motion.div>
+            </TabsContent>
+          </AnimatePresence>
+        </Tabs>
+        
+        {showAdminEditor && (
+          <ErrorBoundary>
+            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+              <AdminUserEditor 
+                onClose={() => setShowAdminEditor(false)}
+                onSave={handleAdminSaved}
+                onEditUser={handleEditUser}
+                onAddAdmin={handleAddAdmin}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default AdminDashboard;
