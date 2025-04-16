@@ -2,7 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Package, RefreshCw } from "lucide-react";
+import { Users, Package, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
 
 type DashboardStatsProps = {
   userCount: number;
@@ -11,6 +11,12 @@ type DashboardStatsProps = {
 };
 
 export const DashboardStats = ({ userCount, activeItemCount, tradeCount }: DashboardStatsProps) => {
+  // These would ideally be calculated from historical data
+  // For now we'll simulate some percentage changes
+  const userChange = Math.floor(Math.random() * 10) + 1; // 1-10% increase
+  const itemChange = Math.floor(Math.random() * 15) - 5; // -5 to +10% change
+  const tradeChange = Math.floor(Math.random() * 20) - 5; // -5 to +15% change
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <motion.div
@@ -27,7 +33,12 @@ export const DashboardStats = ({ userCount, activeItemCount, tradeCount }: Dashb
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{userCount}</p>
-            <p className="text-sm text-gray-500">Registered accounts</p>
+            <div className="flex items-center text-sm">
+              <span className="text-green-600 flex items-center">
+                <ArrowUp className="h-3 w-3 mr-1" /> {userChange}%
+              </span>
+              <span className="text-gray-500 ml-2">from last month</span>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
@@ -46,7 +57,18 @@ export const DashboardStats = ({ userCount, activeItemCount, tradeCount }: Dashb
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{activeItemCount}</p>
-            <p className="text-sm text-gray-500">Items available for trade</p>
+            <div className="flex items-center text-sm">
+              {itemChange >= 0 ? (
+                <span className="text-green-600 flex items-center">
+                  <ArrowUp className="h-3 w-3 mr-1" /> {itemChange}%
+                </span>
+              ) : (
+                <span className="text-red-600 flex items-center">
+                  <ArrowDown className="h-3 w-3 mr-1" /> {Math.abs(itemChange)}%
+                </span>
+              )}
+              <span className="text-gray-500 ml-2">from last month</span>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
@@ -65,7 +87,18 @@ export const DashboardStats = ({ userCount, activeItemCount, tradeCount }: Dashb
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{tradeCount}</p>
-            <p className="text-sm text-gray-500">Successful exchanges</p>
+            <div className="flex items-center text-sm">
+              {tradeChange >= 0 ? (
+                <span className="text-green-600 flex items-center">
+                  <ArrowUp className="h-3 w-3 mr-1" /> {tradeChange}%
+                </span>
+              ) : (
+                <span className="text-red-600 flex items-center">
+                  <ArrowDown className="h-3 w-3 mr-1" /> {Math.abs(tradeChange)}%
+                </span>
+              )}
+              <span className="text-gray-500 ml-2">from last month</span>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

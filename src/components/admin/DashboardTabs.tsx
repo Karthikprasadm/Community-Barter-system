@@ -1,5 +1,5 @@
 
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
@@ -11,10 +11,11 @@ import {
   BarChart3, 
   FileDown 
 } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { DatabaseQueryTab } from "./DatabaseQueryTab";
 import { UsersTab } from "./UsersTab";
 import { ItemsTab } from "./ItemsTab";
+import { useToast } from "@/components/ui/use-toast";
 
 const ActivityLog = lazy(() => import('@/components/ui/ActivityLog').then(mod => ({ default: mod.ActivityLog })));
 const DataExport = lazy(() => import('@/components/ui/DataExport').then(mod => ({ default: mod.DataExport })));
@@ -59,6 +60,21 @@ export const DashboardTabs = ({
   handleAddAdmin,
   addUser
 }: DashboardTabsProps) => {
+  const { toast } = useToast();
+
+  // Effect to notify when data changes
+  useEffect(() => {
+    if (activeTab === "users" || activeTab === "items") {
+      // This will run whenever users or items arrays change
+      const now = new Date().toLocaleTimeString();
+      toast({
+        title: "Data updated",
+        description: `Latest data loaded at ${now}`,
+        duration: 3000,
+      });
+    }
+  }, [users, items, activeTab, toast]);
+  
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid grid-cols-6 mb-8">
@@ -88,14 +104,21 @@ export const DashboardTabs = ({
         </TabsTrigger>
       </TabsList>
       
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         <TabsContent value="database" key="database">
-          <DatabaseQueryTab 
-            users={users} 
-            items={items} 
-            trades={trades} 
-            offers={offers} 
-          />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <DatabaseQueryTab 
+              users={users} 
+              items={items} 
+              trades={trades} 
+              offers={offers} 
+            />
+          </motion.div>
         </TabsContent>
         
         <TabsContent value="users" key="users">
@@ -126,27 +149,48 @@ export const DashboardTabs = ({
         </TabsContent>
         
         <TabsContent value="activity" key="activity">
-          <ErrorBoundary>
-            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-              <ActivityLog />
-            </Suspense>
-          </ErrorBoundary>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ErrorBoundary>
+              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                <ActivityLog />
+              </Suspense>
+            </ErrorBoundary>
+          </motion.div>
         </TabsContent>
         
         <TabsContent value="analytics" key="analytics">
-          <ErrorBoundary>
-            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-              <AdminCharts />
-            </Suspense>
-          </ErrorBoundary>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ErrorBoundary>
+              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                <AdminCharts />
+              </Suspense>
+            </ErrorBoundary>
+          </motion.div>
         </TabsContent>
         
         <TabsContent value="export" key="export">
-          <ErrorBoundary>
-            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-              <DataExport />
-            </Suspense>
-          </ErrorBoundary>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ErrorBoundary>
+              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                <DataExport />
+              </Suspense>
+            </ErrorBoundary>
+          </motion.div>
         </TabsContent>
       </AnimatePresence>
     </Tabs>
