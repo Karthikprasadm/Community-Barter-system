@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,9 @@ import {
   Save,
   Edit,
   FileCode,
-  Download
+  Download,
+  Clock,
+  Bookmark
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -24,17 +25,54 @@ interface DatabaseQueryTabProps {
   items: any[];
   trades: any[];
   offers: any[];
+  onUpdateQueryHistory?: (history: QueryHistoryItem[]) => void;
 }
 
-export const DatabaseQueryTab = ({ users, items, trades, offers }: DatabaseQueryTabProps) => {
+export interface QueryHistoryItem {
+  id: string;
+  query: string;
+  executionTime: number;
+  rowsReturned: number;
+  timestamp: Date;
+  isBookmarked: boolean;
+}
+
+export const DatabaseQueryTab = ({ users, items, trades, offers, onUpdateQueryHistory }: DatabaseQueryTabProps) => {
   const [sqlQuery, setSqlQuery] = useState("SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;");
   const [queryResult, setQueryResult] = useState<any[]>([]);
   const [isQueryExecuting, setIsQueryExecuting] = useState(false);
   const [isQueryEditable, setIsQueryEditable] = useState(false);
+  const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
+
+  const [executionTime, setExecutionTime] = useState<number>(0);
+  const [queryStats, setQueryStats] = useState<{ avg: number; min: number; max: number; recent: number[] }>({
+    avg: 0,
+    min: 0,
+    max: 0,
+    recent: []
+  });
+
+  useEffect(() => {
+    if (queryHistory.length > 0) {
+      const times = queryHistory.map(item => item.executionTime);
+      setQueryStats({
+        avg: times.reduce((a, b) => a + b, 0) / times.length,
+        min: Math.min(...times),
+        max: Math.max(...times),
+        recent: times.slice(-5)
+      });
+    }
+    
+    if (onUpdateQueryHistory) {
+      onUpdateQueryHistory(queryHistory);
+    }
+  }, [queryHistory, onUpdateQueryHistory]);
 
   const handleExecuteQuery = () => {
     setIsQueryExecuting(true);
+    const startTime = performance.now();
     
     setTimeout(() => {
       try {
@@ -142,13 +180,32 @@ export const DatabaseQueryTab = ({ users, items, trades, offers }: DatabaseQuery
           }));
         }
         
+        const endTime = performance.now();
+        const queryExecutionTime = parseFloat((endTime - startTime).toFixed(2));
+        setExecutionTime(queryExecutionTime);
+        
+        const historyItem: QueryHistoryItem = {
+          id: Date.now().toString(),
+          query: sqlQuery,
+          executionTime: queryExecutionTime,
+          rowsReturned: result.length,
+          timestamp: new Date(),
+          isBookmarked: false
+        };
+        
+        setQueryHistory(prev => [historyItem, ...prev].slice(0, 50));
         setQueryResult(result);
+        
         toast({
           title: "Query executed successfully",
-          description: `Returned ${result.length} rows`,
+          description: `Returned ${result.length} rows in ${queryExecutionTime}ms`,
         });
       } catch (error) {
         console.error("Query execution error:", error);
+        const endTime = performance.now();
+        const queryExecutionTime = parseFloat((endTime - startTime).toFixed(2));
+        setExecutionTime(queryExecutionTime);
+        
         toast({
           variant: "destructive",
           title: "Query execution failed",
@@ -181,6 +238,23 @@ export const DatabaseQueryTab = ({ users, items, trades, offers }: DatabaseQuery
       });
     }
   };
+  
+  const handleBookmarkQuery = (id: string) => {
+    setQueryHistory(prev => 
+      prev.map(item => 
+        item.id === id ? {...item, isBookmarked: !item.isBookmarked} : item
+      )
+    );
+    toast({
+      title: "Query bookmarked",
+      description: "You can find it in your history",
+    });
+  };
+  
+  const handleLoadQuery = (query: string) => {
+    setSqlQuery(query);
+    setShowHistory(false);
+  };
 
   const sampleQueries = [
     { name: "List all users", query: "SELECT * FROM users ORDER BY joinedDate DESC;" },
@@ -209,19 +283,103 @@ export const DatabaseQueryTab = ({ users, items, trades, offers }: DatabaseQuery
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex flex-wrap gap-2">
-            {sampleQueries.map((q, i) => (
-              <Button
-                key={i}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => setSqlQuery(q.query)}
-              >
-                <FileCode className="h-3 w-3 mr-1" /> {q.name}
-              </Button>
-            ))}
+          <div className="flex justify-between items-center">
+            <div className="flex flex-wrap gap-2">
+              {sampleQueries.map((q, i) => (
+                <Button
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setSqlQuery(q.query)}
+                >
+                  <FileCode className="h-3 w-3 mr-1" /> {q.name}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="text-xs"
+            >
+              <Clock className="h-3 w-3 mr-1" /> 
+              {queryHistory.length > 0 ? `History (${queryHistory.length})` : 'History'}
+            </Button>
           </div>
+          
+          {showHistory && (
+            <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700 mb-4">
+              <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+                <span className="font-medium text-slate-200">Query History</span>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setShowHistory(false)}
+                  className="h-7 px-2 bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600"
+                >
+                  <XCircle className="h-3 w-3 mr-1" /> Close
+                </Button>
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                {queryHistory.length === 0 ? (
+                  <div className="p-4 text-center text-slate-400">
+                    No query history yet. Execute some queries to see them here.
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-800 text-slate-400 border-b border-slate-700">
+                        <th className="px-4 py-2 text-left">Query</th>
+                        <th className="px-4 py-2 text-left">Time</th>
+                        <th className="px-4 py-2 text-left">Rows</th>
+                        <th className="px-4 py-2 text-left">Executed</th>
+                        <th className="px-4 py-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {queryHistory.map((item) => (
+                        <tr key={item.id} className="border-b border-slate-800 hover:bg-slate-800/50">
+                          <td className="px-4 py-2">
+                            <div className="max-w-xs truncate font-mono text-xs">
+                              {item.query}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 font-mono">
+                            {item.executionTime}ms
+                          </td>
+                          <td className="px-4 py-2 font-mono">
+                            {item.rowsReturned}
+                          </td>
+                          <td className="px-4 py-2 text-slate-400 text-xs">
+                            {new Date(item.timestamp).toLocaleTimeString()}
+                          </td>
+                          <td className="px-4 py-2 flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleLoadQuery(item.query)}
+                              className="h-6 w-6 p-0 bg-blue-900/40 hover:bg-blue-800/60 border-blue-700/50"
+                            >
+                              <FileCode className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleBookmarkQuery(item.id)}
+                              className={`h-6 w-6 p-0 ${item.isBookmarked ? 'bg-yellow-600/40 hover:bg-yellow-500/60 border-yellow-500/50' : 'bg-slate-700 hover:bg-slate-600 border-slate-600'}`}
+                            >
+                              <Bookmark className="h-3 w-3" fill={item.isBookmarked ? "currentColor" : "none"} />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          )}
           
           <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
             <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
@@ -265,6 +423,32 @@ export const DatabaseQueryTab = ({ users, items, trades, offers }: DatabaseQuery
             </div>
           </div>
           
+          {executionTime > 0 && (
+            <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700 p-4">
+              <h3 className="font-medium text-sm mb-2 text-blue-300 flex items-center gap-2">
+                <Clock className="h-4 w-4" /> Query Performance
+              </h3>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-slate-800 p-3 rounded-md">
+                  <span className="text-xs text-slate-400 block">Last Execution</span>
+                  <span className="text-xl font-mono">{executionTime}ms</span>
+                </div>
+                <div className="bg-slate-800 p-3 rounded-md">
+                  <span className="text-xs text-slate-400 block">Average Time</span>
+                  <span className="text-xl font-mono">{queryStats.avg.toFixed(2)}ms</span>
+                </div>
+                <div className="bg-slate-800 p-3 rounded-md">
+                  <span className="text-xs text-slate-400 block">Min Time</span>
+                  <span className="text-xl font-mono">{queryStats.min.toFixed(2)}ms</span>
+                </div>
+                <div className="bg-slate-800 p-3 rounded-md">
+                  <span className="text-xs text-slate-400 block">Max Time</span>
+                  <span className="text-xl font-mono">{queryStats.max.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
             <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -273,6 +457,11 @@ export const DatabaseQueryTab = ({ users, items, trades, offers }: DatabaseQuery
                 {queryResult.length > 0 && (
                   <span className="text-xs bg-blue-900 text-blue-200 px-2 py-0.5 rounded">
                     {queryResult.length} rows
+                  </span>
+                )}
+                {executionTime > 0 && (
+                  <span className="text-xs bg-green-900 text-green-200 px-2 py-0.5 rounded">
+                    {executionTime}ms
                   </span>
                 )}
               </div>

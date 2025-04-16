@@ -1,25 +1,14 @@
 
-import React, { Suspense, lazy, useEffect } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
-import { 
-  Database, 
-  Users, 
-  Package, 
-  Activity, 
-  BarChart3, 
-  FileDown 
-} from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
-import { DatabaseQueryTab } from "./DatabaseQueryTab";
+import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersTab } from "./UsersTab";
 import { ItemsTab } from "./ItemsTab";
-import { useToast } from "@/components/ui/use-toast";
-
-const ActivityLog = lazy(() => import('@/components/ui/ActivityLog').then(mod => ({ default: mod.ActivityLog })));
-const DataExport = lazy(() => import('@/components/ui/DataExport').then(mod => ({ default: mod.DataExport })));
-const AdminCharts = lazy(() => import('@/components/ui/AdminCharts').then(mod => ({ default: mod.AdminCharts })));
+import { TradeHistory } from "@/components/ui/TradeHistory";
+import { AdminCharts } from "@/components/ui/AdminCharts";
+import { DatabaseQueryTab, QueryHistoryItem } from "./DatabaseQueryTab";
+import { PerformanceInsightsTab } from "./PerformanceInsightsTab";
+import { DataExport } from "@/components/ui/DataExport";
+import { ActivityLog } from "@/components/ui/ActivityLog";
 
 interface DashboardTabsProps {
   activeTab: string;
@@ -48,8 +37,6 @@ export const DashboardTabs = ({
   items,
   trades,
   offers,
-  showUserEditor,
-  showItemEditor,
   handleEditUser,
   handleAddUser,
   handleAddItem,
@@ -58,141 +45,75 @@ export const DashboardTabs = ({
   handleDeleteItem,
   handleUpdateItemStatus,
   handleAddAdmin,
-  addUser
 }: DashboardTabsProps) => {
-  const { toast } = useToast();
-
-  // Effect to notify when data changes
-  useEffect(() => {
-    if (activeTab === "users" || activeTab === "items") {
-      // This will run whenever users or items arrays change
-      const now = new Date().toLocaleTimeString();
-      toast({
-        title: "Data updated",
-        description: `Latest data loaded at ${now}`,
-        duration: 3000,
-      });
-    }
-  }, [users, items, activeTab, toast]);
+  // State for query history
+  const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
   
+  // This effect syncs the queryHistory from DatabaseQueryTab
+  const handleQueryHistoryUpdate = (history: QueryHistoryItem[]) => {
+    setQueryHistory(history);
+  };
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-6 mb-8">
-        <TabsTrigger value="database" className="flex items-center gap-2 py-3">
-          <Database className="h-4 w-4" /> 
-          Database Query
-        </TabsTrigger>
-        <TabsTrigger value="users" className="flex items-center gap-2 py-3">
-          <Users className="h-4 w-4" />
-          Users
-        </TabsTrigger>
-        <TabsTrigger value="items" className="flex items-center gap-2 py-3">
-          <Package className="h-4 w-4" />
-          Items
-        </TabsTrigger>
-        <TabsTrigger value="activity" className="flex items-center gap-2 py-3">
-          <Activity className="h-4 w-4" />
-          Activity Log
-        </TabsTrigger>
-        <TabsTrigger value="analytics" className="flex items-center gap-2 py-3">
-          <BarChart3 className="h-4 w-4" />
-          Analytics
-        </TabsTrigger>
-        <TabsTrigger value="export" className="flex items-center gap-2 py-3">
-          <FileDown className="h-4 w-4" />
-          Data Export
-        </TabsTrigger>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="grid w-full grid-cols-7">
+        <TabsTrigger value="users">Users</TabsTrigger>
+        <TabsTrigger value="items">Items</TabsTrigger>
+        <TabsTrigger value="trades">Trades</TabsTrigger>
+        <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        <TabsTrigger value="database">Database</TabsTrigger>
+        <TabsTrigger value="performance">Performance</TabsTrigger>
+        <TabsTrigger value="activity">Activity Log</TabsTrigger>
       </TabsList>
-      
-      <AnimatePresence mode="sync">
-        <TabsContent value="database" key="database">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <DatabaseQueryTab 
-              users={users} 
-              items={items} 
-              trades={trades} 
-              offers={offers} 
-            />
-          </motion.div>
+
+      <div className="mt-6">
+        <TabsContent value="users" className="mt-0">
+          <UsersTab 
+            users={users} 
+            onEditUser={handleEditUser}
+            onAddUser={handleAddUser}
+            onDeleteUser={handleDeleteUser}
+            onAddAdmin={handleAddAdmin}
+          />
         </TabsContent>
         
-        <TabsContent value="users" key="users">
-          {!showUserEditor && (
-            <UsersTab 
-              users={users}
-              items={items}
-              handleEditUser={handleEditUser}
-              handleAddUser={handleAddUser}
-              handleDeleteUser={handleDeleteUser}
-              handleAddAdmin={handleAddAdmin}
-              addUser={addUser}
-            />
-          )}
+        <TabsContent value="items" className="mt-0">
+          <ItemsTab 
+            items={items}
+            users={users}
+            onAddItem={handleAddItem}
+            onEditItem={handleEditItem}
+            onDeleteItem={handleDeleteItem}
+            onUpdateStatus={handleUpdateItemStatus}
+          />
         </TabsContent>
         
-        <TabsContent value="items" key="items">
-          {!showItemEditor && (
-            <ItemsTab 
-              users={users}
-              items={items}
-              handleEditItem={handleEditItem}
-              handleAddItem={handleAddItem}
-              handleDeleteItem={handleDeleteItem}
-              handleUpdateItemStatus={handleUpdateItemStatus}
-            />
-          )}
+        <TabsContent value="trades" className="mt-0">
+          <TradeHistory trades={trades} offers={offers} users={users} />
         </TabsContent>
         
-        <TabsContent value="activity" key="activity">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ErrorBoundary>
-              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                <ActivityLog />
-              </Suspense>
-            </ErrorBoundary>
-          </motion.div>
+        <TabsContent value="analytics" className="mt-0">
+          <AdminCharts />
         </TabsContent>
         
-        <TabsContent value="analytics" key="analytics">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ErrorBoundary>
-              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                <AdminCharts />
-              </Suspense>
-            </ErrorBoundary>
-          </motion.div>
+        <TabsContent value="database" className="mt-0">
+          <DatabaseQueryTab 
+            users={users} 
+            items={items} 
+            trades={trades} 
+            offers={offers}
+            onUpdateQueryHistory={handleQueryHistoryUpdate}
+          />
         </TabsContent>
         
-        <TabsContent value="export" key="export">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ErrorBoundary>
-              <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                <DataExport />
-              </Suspense>
-            </ErrorBoundary>
-          </motion.div>
+        <TabsContent value="performance" className="mt-0">
+          <PerformanceInsightsTab queryHistory={queryHistory} />
         </TabsContent>
-      </AnimatePresence>
+        
+        <TabsContent value="activity" className="mt-0">
+          <ActivityLog users={users} items={items} trades={trades} />
+        </TabsContent>
+      </div>
     </Tabs>
   );
 };
