@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 export const AdminCharts = () => {
   const { users, items, trades, offers } = useBarterContext();
   
-  // Calculate data for charts
+  // Calculate data for charts based on real data
   const categoryCounts = items.reduce((acc, item) => {
     const category = item.category;
     acc[category] = (acc[category] || 0) + 1;
@@ -22,23 +22,33 @@ export const AdminCharts = () => {
     value,
   }));
   
-  // Trading activity over time (mocked data based on trading months)
-  const getMonthData = () => {
+  // Trading activity over time (using real trade data)
+  const getTradeActivityByMonth = () => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months.map(month => {
-      // Generate some mock data that looks realistic
-      const tradesCount = Math.floor(Math.random() * 10) + 1;
-      const offersCount = Math.floor(Math.random() * 15) + 5;
-      
-      return {
-        month,
-        trades: tradesCount,
-        offers: offersCount,
-      };
+    const monthlyTradeData = months.map(month => ({
+      month,
+      trades: 0,
+      offers: 0,
+    }));
+    
+    // Count actual trades by month
+    trades.forEach(trade => {
+      const tradeDate = new Date(trade.tradeDate);
+      const monthIndex = tradeDate.getMonth();
+      monthlyTradeData[monthIndex].trades += 1;
     });
+    
+    // Count actual offers by month
+    offers.forEach(offer => {
+      const offerDate = new Date(offer.offerDate);
+      const monthIndex = offerDate.getMonth();
+      monthlyTradeData[monthIndex].offers += 1;
+    });
+    
+    return monthlyTradeData;
   };
   
-  const tradeActivityData = getMonthData();
+  const tradeActivityData = getTradeActivityByMonth();
   
   // User reputation distribution
   const reputationData = [
@@ -55,6 +65,42 @@ export const AdminCharts = () => {
     { name: 'Traded', value: items.filter(item => !item.isAvailable).length },
   ];
   
+  // User Activity Metrics - Using real data
+  const getUserActivityMetrics = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyActivityData = months.map(month => ({
+      month,
+      users: 0,
+      items: 0,
+      trades: 0,
+    }));
+    
+    // Count new users by month
+    users.forEach(user => {
+      const joinDate = new Date(user.joinedDate);
+      const monthIndex = joinDate.getMonth();
+      monthlyActivityData[monthIndex].users += 1;
+    });
+    
+    // Count new items by month
+    items.forEach(item => {
+      const postedDate = new Date(item.postedDate);
+      const monthIndex = postedDate.getMonth();
+      monthlyActivityData[monthIndex].items += 1;
+    });
+    
+    // Count trades by month (same as above)
+    trades.forEach(trade => {
+      const tradeDate = new Date(trade.tradeDate);
+      const monthIndex = tradeDate.getMonth();
+      monthlyActivityData[monthIndex].trades += 1;
+    });
+    
+    return monthlyActivityData;
+  };
+  
+  const userActivityData = getUserActivityMetrics();
+  
   // Colors for pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#8DD1E1', '#A28CFA', '#FF6C6C'];
   
@@ -67,7 +113,7 @@ export const AdminCharts = () => {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-xl font-bold">Platform Analytics</CardTitle>
-          <CardDescription>Visual representation of platform data</CardDescription>
+          <CardDescription>Visual representation of real platform data</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="categories">
@@ -214,27 +260,22 @@ export const AdminCharts = () => {
         </CardContent>
       </Card>
 
-      {/* Additional Analytics */}
+      {/* Additional Analytics - Using Real Data */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">User Activity Metrics</CardTitle>
-          <CardDescription>Detailed user engagement statistics</CardDescription>
+          <CardDescription>Detailed user engagement statistics based on actual data</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-60 bg-white rounded-md border">
             <ChartContainer 
               config={{
-                users: { label: "Active Users", color: "#ff9800" },
+                users: { label: "New Users", color: "#ff9800" },
                 items: { label: "Listed Items", color: "#2196f3" },
                 trades: { label: "Completed Trades", color: "#4caf50" },
               }}
             >
-              <LineChart data={getMonthData().map(d => ({
-                month: d.month,
-                users: Math.floor(Math.random() * 20) + 5,
-                items: Math.floor(Math.random() * 15) + 3,
-                trades: d.trades
-              }))}>
+              <LineChart data={userActivityData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />

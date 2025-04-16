@@ -77,7 +77,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const AdminDashboard = () => {
-  const { isAdmin, isHeadAdmin, users, items, trades, addUser, deleteUser, updateItem, deleteItem, addItem } = useBarterContext();
+  const { isAdmin, isHeadAdmin, users, items, trades, offers, addUser, deleteUser, updateItem, deleteItem, addItem } = useBarterContext();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [showUserEditor, setShowUserEditor] = useState(false);
@@ -163,16 +163,42 @@ const AdminDashboard = () => {
       try {
         let result = [];
         
-        if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('users')) {
-          result = users.map(user => ({
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            reputation: user.reputation,
-            joinedDate: user.joinedDate,
-            item_count: items.filter(item => item.userId === user.id).length
-          }));
-        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('items')) {
+        if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('from users')) {
+          if (sqlQuery.toLowerCase().includes('reputation_range')) {
+            const reputationRanges = {
+              'Excellent (4.5-5)': users.filter(u => u.reputation >= 4.5).length,
+              'Good (3.5-4.5)': users.filter(u => u.reputation >= 3.5 && u.reputation < 4.5).length,
+              'Average (2.5-3.5)': users.filter(u => u.reputation >= 2.5 && u.reputation < 3.5).length,
+              'Fair (1.5-2.5)': users.filter(u => u.reputation >= 1.5 && u.reputation < 2.5).length,
+              'Poor (0-1.5)': users.filter(u => u.reputation < 1.5).length
+            };
+            
+            result = Object.entries(reputationRanges).map(([reputation_range, user_count]) => ({
+              reputation_range,
+              user_count
+            }));
+          } else {
+            result = users.map(user => ({
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              reputation: user.reputation,
+              joinedDate: user.joinedDate,
+              item_count: items.filter(item => item.userId === user.id).length
+            }));
+            
+            if (sqlQuery.toLowerCase().includes('group by') && sqlQuery.toLowerCase().includes('count(i.id)')) {
+              result = users.map(user => ({
+                username: user.username,
+                item_count: items.filter(item => item.userId === user.id).length
+              }));
+              
+              if (sqlQuery.toLowerCase().includes('order by item_count desc')) {
+                result.sort((a, b) => b.item_count - a.item_count);
+              }
+            }
+          }
+        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('from items')) {
           result = items.map(item => ({
             id: item.id,
             name: item.name,
@@ -181,13 +207,57 @@ const AdminDashboard = () => {
             isAvailable: item.isAvailable ? 'Available' : 'Not Available',
             postedDate: item.postedDate
           }));
-        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('trades')) {
-          result = trades.map(trade => ({
-            id: trade.id,
-            offerId: trade.offerId,
-            tradeDate: trade.tradeDate,
-            notes: trade.notes || 'No notes'
-          }));
+          
+          if (sqlQuery.toLowerCase().includes('group by category')) {
+            const categoryCounts = items.reduce((acc, item) => {
+              acc[item.category] = (acc[item.category] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+            
+            result = Object.entries(categoryCounts).map(([category, count]) => ({
+              category,
+              count
+            }));
+            
+            if (sqlQuery.toLowerCase().includes('order by count desc')) {
+              result.sort((a, b) => b.count - a.count);
+            }
+          }
+        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('from trades')) {
+          if (sqlQuery.toLowerCase().includes('extract(month from tradedate)')) {
+            const monthCounts: Record<number, number> = {};
+            
+            trades.forEach(trade => {
+              const tradeDate = new Date(trade.tradeDate);
+              const month = tradeDate.getMonth() + 1;
+              monthCounts[month] = (monthCounts[month] || 0) + 1;
+            });
+            
+            result = Object.entries(monthCounts).map(([month, trade_count]) => ({
+              month: parseInt(month),
+              trade_count
+            }));
+            
+            result.sort((a, b) => a.month - b.month);
+          } else {
+            result = trades.map(trade => {
+              const relatedOffer = offers.find(o => o.id === trade.offerId);
+              const fromUser = relatedOffer ? users.find(u => u.id === relatedOffer.fromUserId) : null;
+              const toUser = relatedOffer ? users.find(u => u.id === relatedOffer.toUserId) : null;
+              
+              return {
+                id: trade.id,
+                tradeDate: trade.tradeDate,
+                from_user: fromUser?.username || 'Unknown',
+                to_user: toUser?.username || 'Unknown',
+                notes: trade.notes || 'No notes'
+              };
+            });
+            
+            if (sqlQuery.toLowerCase().includes('order by t.tradedate desc')) {
+              result.sort((a, b) => new Date(b.tradeDate).getTime() - new Date(a.tradeDate).getTime());
+            }
+          }
         } else {
           result = users.map(user => ({
             username: user.username,
@@ -269,12 +339,13 @@ const AdminDashboard = () => {
     }
   };
 
-  // Sample queries for quick access
   const sampleQueries = [
     { name: "List all users", query: "SELECT * FROM users ORDER BY joinedDate DESC;" },
     { name: "Users with most items", query: "SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;" },
-    { name: "Recent trades", query: "SELECT t.id, t.tradeDate, u1.username as from_user, u2.username as to_user\nFROM trades t\nJOIN trades o ON t.offerId = o.id\nJOIN users u1 ON o.fromUserId = u1.id\nJOIN users u2 ON o.toUserId = u2.id\nORDER BY t.tradeDate DESC;" },
-    { name: "Items by category", query: "SELECT category, COUNT(*) as count\nFROM items\nGROUP BY category\nORDER BY count DESC;" }
+    { name: "Recent trades", query: "SELECT t.id, t.tradeDate, u1.username as from_user, u2.username as to_user\nFROM trades t\nJOIN offers o ON t.offerId = o.id\nJOIN users u1 ON o.fromUserId = u1.id\nJOIN users u2 ON o.toUserId = u2.id\nORDER BY t.tradeDate DESC;" },
+    { name: "Items by category", query: "SELECT category, COUNT(*) as count\nFROM items\nGROUP BY category\nORDER BY count DESC;" },
+    { name: "Monthly trade stats", query: "SELECT EXTRACT(MONTH FROM tradeDate) as month, COUNT(*) as trade_count\nFROM trades\nGROUP BY month\nORDER BY month;" },
+    { name: "User reputation stats", query: "SELECT \n  CASE \n    WHEN reputation >= 4.5 THEN 'Excellent (4.5-5)'\n    WHEN reputation >= 3.5 THEN 'Good (3.5-4.5)'\n    WHEN reputation >= 2.5 THEN 'Average (2.5-3.5)'\n    WHEN reputation >= 1.5 THEN 'Fair (1.5-2.5)'\n    ELSE 'Poor (0-1.5)'\n  END as reputation_range,\n  COUNT(*) as user_count\nFROM users\nGROUP BY reputation_range\nORDER BY reputation_range;" }
   ];
 
   if (isLoading) {
@@ -434,7 +505,6 @@ const AdminDashboard = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Quick Query Templates */}
                     <div className="flex flex-wrap gap-2">
                       {sampleQueries.map((q, i) => (
                         <Button
@@ -449,7 +519,6 @@ const AdminDashboard = () => {
                       ))}
                     </div>
                     
-                    {/* SQL Editor */}
                     <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
                       <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -492,7 +561,6 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     
-                    {/* Query Results */}
                     <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
                       <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
                         <div className="flex items-center gap-2">
