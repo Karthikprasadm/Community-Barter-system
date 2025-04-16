@@ -1,83 +1,25 @@
+
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBarterContext } from "@/context/BarterContext";
 import { Header } from "@/components/layout/Header";
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  Database, 
-  ShieldCheck, 
-  Users, 
-  Package, 
-  RefreshCw, 
-  Plus,
-  FileDown,
-  Activity,
-  BarChart3,
-  PlayCircle,
-  Save,
-  XCircle,
-  Check,
-  Clock,
-  PlusCircle,
-  Download,
-  FileCode,
-  Terminal,
-  UserPlus,
-  Edit,
-  Trash2,
-  Server,
-  Settings
-} from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { motion, AnimatePresence } from "framer-motion";
+import { ShieldCheck, RefreshCw } from "lucide-react";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 
-const ActivityLog = lazy(() => import('@/components/ui/ActivityLog').then(mod => ({ default: mod.ActivityLog })));
-const DataExport = lazy(() => import('@/components/ui/DataExport').then(mod => ({ default: mod.DataExport })));
+// Import refactored dashboard components
+import { DashboardStats } from "@/components/admin/DashboardStats";
+import { DashboardTabs } from "@/components/admin/DashboardTabs";
+import { LoadingDashboard } from "@/components/admin/LoadingDashboard";
+
 const UserEditor = lazy(() => import('@/components/ui/UserEditor').then(mod => ({ default: mod.UserEditor })));
 const ItemEditor = lazy(() => import('@/components/ui/ItemEditor').then(mod => ({ default: mod.ItemEditor })));
 const AdminUserEditor = lazy(() => import('@/components/ui/AdminUserEditor').then(mod => ({ default: mod.AdminUserEditor })));
-const AdminUserList = lazy(() => import('@/components/ui/AdminUserList').then(mod => ({ default: mod.AdminUserList })));
-const AdminCharts = lazy(() => import('@/components/ui/AdminCharts').then(mod => ({ default: mod.AdminCharts })));
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const AdminDashboard = () => {
-  const { isAdmin, isHeadAdmin, users, items, trades, offers, addUser, deleteUser, updateItem, deleteItem, addItem } = useBarterContext();
+  const { isAdmin, isHeadAdmin, users, items, trades, offers, addUser, deleteUser, updateItem, deleteItem } = useBarterContext();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [showUserEditor, setShowUserEditor] = useState(false);
@@ -86,10 +28,6 @@ const AdminDashboard = () => {
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("database");
-  const [sqlQuery, setSqlQuery] = useState("SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;");
-  const [queryResult, setQueryResult] = useState<any[]>([]);
-  const [isQueryExecuting, setIsQueryExecuting] = useState(false);
-  const [isQueryEditable, setIsQueryEditable] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -107,7 +45,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!isLoading && activeTab === 'database') {
-      handleExecuteQuery();
+      // Initial query execution is now handled within the DatabaseQueryTab component
     }
   }, [isLoading, activeTab]);
 
@@ -156,155 +94,6 @@ const AdminDashboard = () => {
     setShowAdminEditor(false);
   };
 
-  const handleExecuteQuery = () => {
-    setIsQueryExecuting(true);
-    
-    setTimeout(() => {
-      try {
-        let result = [];
-        
-        if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('from users')) {
-          if (sqlQuery.toLowerCase().includes('reputation_range')) {
-            const reputationRanges = {
-              'Excellent (4.5-5)': users.filter(u => u.reputation >= 4.5).length,
-              'Good (3.5-4.5)': users.filter(u => u.reputation >= 3.5 && u.reputation < 4.5).length,
-              'Average (2.5-3.5)': users.filter(u => u.reputation >= 2.5 && u.reputation < 3.5).length,
-              'Fair (1.5-2.5)': users.filter(u => u.reputation >= 1.5 && u.reputation < 2.5).length,
-              'Poor (0-1.5)': users.filter(u => u.reputation < 1.5).length
-            };
-            
-            result = Object.entries(reputationRanges).map(([reputation_range, user_count]) => ({
-              reputation_range,
-              user_count
-            }));
-          } else {
-            result = users.map(user => ({
-              id: user.id,
-              username: user.username,
-              email: user.email,
-              reputation: user.reputation,
-              joinedDate: user.joinedDate,
-              item_count: items.filter(item => item.userId === user.id).length
-            }));
-            
-            if (sqlQuery.toLowerCase().includes('group by') && sqlQuery.toLowerCase().includes('count(i.id)')) {
-              result = users.map(user => ({
-                username: user.username,
-                item_count: items.filter(item => item.userId === user.id).length
-              }));
-              
-              if (sqlQuery.toLowerCase().includes('order by item_count desc')) {
-                result.sort((a, b) => b.item_count - a.item_count);
-              }
-            }
-          }
-        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('from items')) {
-          result = items.map(item => ({
-            id: item.id,
-            name: item.name,
-            category: item.category,
-            userId: item.userId,
-            isAvailable: item.isAvailable ? 'Available' : 'Not Available',
-            postedDate: item.postedDate
-          }));
-          
-          if (sqlQuery.toLowerCase().includes('group by category')) {
-            const categoryCounts = items.reduce((acc, item) => {
-              acc[item.category] = (acc[item.category] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>);
-            
-            result = Object.entries(categoryCounts).map(([category, count]) => ({
-              category,
-              count
-            }));
-            
-            if (sqlQuery.toLowerCase().includes('order by count desc')) {
-              result.sort((a, b) => b.count - a.count);
-            }
-          }
-        } else if (sqlQuery.toLowerCase().includes('select') && sqlQuery.toLowerCase().includes('from trades')) {
-          if (sqlQuery.toLowerCase().includes('extract(month from tradedate)')) {
-            const monthCounts: Record<number, number> = {};
-            
-            trades.forEach(trade => {
-              const tradeDate = new Date(trade.tradeDate);
-              const month = tradeDate.getMonth() + 1;
-              monthCounts[month] = (monthCounts[month] || 0) + 1;
-            });
-            
-            result = Object.entries(monthCounts).map(([month, trade_count]) => ({
-              month: parseInt(month),
-              trade_count
-            }));
-            
-            result.sort((a, b) => a.month - b.month);
-          } else {
-            result = trades.map(trade => {
-              const relatedOffer = offers.find(o => o.id === trade.offerId);
-              const fromUser = relatedOffer ? users.find(u => u.id === relatedOffer.fromUserId) : null;
-              const toUser = relatedOffer ? users.find(u => u.id === relatedOffer.toUserId) : null;
-              
-              return {
-                id: trade.id,
-                tradeDate: trade.tradeDate,
-                from_user: fromUser?.username || 'Unknown',
-                to_user: toUser?.username || 'Unknown',
-                notes: trade.notes || 'No notes'
-              };
-            });
-            
-            if (sqlQuery.toLowerCase().includes('order by t.tradedate desc')) {
-              result.sort((a, b) => new Date(b.tradeDate).getTime() - new Date(a.tradeDate).getTime());
-            }
-          }
-        } else {
-          result = users.map(user => ({
-            username: user.username,
-            item_count: items.filter(item => item.userId === user.id).length
-          }));
-        }
-        
-        setQueryResult(result);
-        toast({
-          title: "Query executed successfully",
-          description: `Returned ${result.length} rows`,
-        });
-      } catch (error) {
-        console.error("Query execution error:", error);
-        toast({
-          variant: "destructive",
-          title: "Query execution failed",
-          description: "There was an error executing your SQL query",
-        });
-        setQueryResult([]);
-      } finally {
-        setIsQueryExecuting(false);
-      }
-    }, 800);
-  };
-
-  const handleClearQuery = () => {
-    setSqlQuery("");
-    setQueryResult([]);
-  };
-
-  const handleSaveResult = () => {
-    try {
-      toast({
-        title: "Changes saved",
-        description: "Your changes have been saved to the database",
-      });
-      setIsQueryEditable(false);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Save failed",
-        description: "There was an error saving your changes",
-      });
-    }
-  };
-
   const handleDeleteUser = (userId: string) => {
     if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
       deleteUser(userId);
@@ -339,39 +128,8 @@ const AdminDashboard = () => {
     }
   };
 
-  const sampleQueries = [
-    { name: "List all users", query: "SELECT * FROM users ORDER BY joinedDate DESC;" },
-    { name: "Users with most items", query: "SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;" },
-    { name: "Recent trades", query: "SELECT t.id, t.tradeDate, u1.username as from_user, u2.username as to_user\nFROM trades t\nJOIN offers o ON t.offerId = o.id\nJOIN users u1 ON o.fromUserId = u1.id\nJOIN users u2 ON o.toUserId = u2.id\nORDER BY t.tradeDate DESC;" },
-    { name: "Items by category", query: "SELECT category, COUNT(*) as count\nFROM items\nGROUP BY category\nORDER BY count DESC;" },
-    { name: "Monthly trade stats", query: "SELECT EXTRACT(MONTH FROM tradeDate) as month, COUNT(*) as trade_count\nFROM trades\nGROUP BY month\nORDER BY month;" },
-    { name: "User reputation stats", query: "SELECT \n  CASE \n    WHEN reputation >= 4.5 THEN 'Excellent (4.5-5)'\n    WHEN reputation >= 3.5 THEN 'Good (3.5-4.5)'\n    WHEN reputation >= 2.5 THEN 'Average (2.5-3.5)'\n    WHEN reputation >= 1.5 THEN 'Fair (1.5-2.5)'\n    ELSE 'Poor (0-1.5)'\n  END as reputation_range,\n  COUNT(*) as user_count\nFROM users\nGROUP BY reputation_range\nORDER BY reputation_range;" }
-  ];
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <Skeleton className="h-8 w-64 mb-2" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <Skeleton className="h-10 w-32" />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-36" />
-            ))}
-          </div>
-          
-          <Skeleton className="h-12 w-full mb-8" />
-          <Skeleton className="h-80 w-full" />
-        </main>
-      </div>
-    );
+    return <LoadingDashboard />;
   }
 
   return (
@@ -399,613 +157,53 @@ const AdminDashboard = () => {
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card className="border-blue-100 hover:border-blue-200 transition-colors">
-              <CardHeader className="pb-2 bg-blue-50">
-                <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
-                  <Users className="h-5 w-5 text-blue-500" />
-                  Total Users
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{users.length}</p>
-                <p className="text-sm text-gray-500">Registered accounts</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
-            <Card className="border-green-100 hover:border-green-200 transition-colors">
-              <CardHeader className="pb-2 bg-green-50">
-                <CardTitle className="text-lg flex items-center gap-2 text-green-700">
-                  <Package className="h-5 w-5 text-green-500" />
-                  Active Items
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{items.filter(item => item.isAvailable).length}</p>
-                <p className="text-sm text-gray-500">Items available for trade</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <Card className="border-amber-100 hover:border-amber-200 transition-colors">
-              <CardHeader className="pb-2 bg-amber-50">
-                <CardTitle className="text-lg flex items-center gap-2 text-amber-700">
-                  <RefreshCw className="h-5 w-5 text-amber-500" />
-                  Completed Trades
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{trades.length}</p>
-                <p className="text-sm text-gray-500">Successful exchanges</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+        <DashboardStats 
+          userCount={users.length} 
+          activeItemCount={items.filter(item => item.isAvailable).length} 
+          tradeCount={trades.length} 
+        />
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-6 mb-8">
-            <TabsTrigger value="database" className="flex items-center gap-2 py-3">
-              <Database className="h-4 w-4" /> 
-              Database Query
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2 py-3">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="items" className="flex items-center gap-2 py-3">
-              <Package className="h-4 w-4" />
-              Items
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-2 py-3">
-              <Activity className="h-4 w-4" />
-              Activity Log
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2 py-3">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="export" className="flex items-center gap-2 py-3">
-              <FileDown className="h-4 w-4" />
-              Data Export
-            </TabsTrigger>
-          </TabsList>
-          
-          <AnimatePresence mode="wait">
-            <TabsContent value="database" key="database">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Terminal className="h-5 w-5 text-purple-600" />
-                      SQL Query Tool
-                    </CardTitle>
-                    <CardDescription>
-                      Execute SQL queries against the platform database and edit results
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-wrap gap-2">
-                      {sampleQueries.map((q, i) => (
-                        <Button
-                          key={i}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs"
-                          onClick={() => setSqlQuery(q.query)}
-                        >
-                          <FileCode className="h-3 w-3 mr-1" /> {q.name}
-                        </Button>
-                      ))}
-                    </div>
-                    
-                    <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
-                      <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Server className="h-4 w-4 text-blue-400" />
-                          <span className="font-medium text-slate-200">SQL Query Editor</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={handleClearQuery}
-                            className="h-7 px-2 bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600"
-                          >
-                            <XCircle className="h-3 w-3 mr-1" /> Clear
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={handleExecuteQuery}
-                            disabled={isQueryExecuting}
-                            className="h-7 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
-                          >
-                            {isQueryExecuting ? (
-                              <><RefreshCw className="h-3 w-3 animate-spin" /> Running...</>
-                            ) : (
-                              <><PlayCircle className="h-3 w-3" /> Execute</>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4">
-                        <p className="text-green-400 text-sm mb-2">-- Type your SQL query below:</p>
-                        <Textarea 
-                          value={sqlQuery}
-                          onChange={(e) => setSqlQuery(e.target.value)}
-                          className="font-mono text-sm bg-slate-950 border-slate-700 text-slate-300 resize-none min-h-[120px] focus-visible:ring-blue-500"
-                          placeholder="Enter SQL query..."
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="bg-slate-900 text-white rounded-md shadow-lg overflow-hidden border border-slate-700">
-                      <div className="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Database className="h-4 w-4 text-blue-400" />
-                          <span className="font-medium text-slate-200">Query Results</span>
-                          {queryResult.length > 0 && (
-                            <span className="text-xs bg-blue-900 text-blue-200 px-2 py-0.5 rounded">
-                              {queryResult.length} rows
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          {isQueryEditable ? (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setIsQueryEditable(false)}
-                                className="h-6 px-2 bg-red-700 hover:bg-red-600 text-red-50 border-red-600 flex items-center gap-1"
-                              >
-                                <XCircle className="h-3 w-3" /> Cancel
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleSaveResult}
-                                className="h-6 px-2 bg-green-700 hover:bg-green-600 text-green-50 border-green-600 flex items-center gap-1"
-                              >
-                                <Save className="h-3 w-3" /> Save Changes
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setIsQueryEditable(true)}
-                                className="h-6 px-2 bg-blue-700 hover:bg-blue-600 text-blue-50 border-blue-600 flex items-center gap-1"
-                              >
-                                <Edit className="h-3 w-3 mr-1" /> Edit Results
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600 flex items-center gap-1"
-                              >
-                                <Download className="h-3 w-3" /> Export
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="overflow-x-auto">
-                        {queryResult.length > 0 ? (
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="bg-slate-800 text-slate-400 border-b border-slate-700">
-                                {Object.keys(queryResult[0]).map((key) => (
-                                  <th key={key} className="px-4 py-2 text-left font-medium">{key}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {queryResult.map((row, rowIndex) => (
-                                <tr key={rowIndex} className="border-b border-slate-800 hover:bg-slate-800/50">
-                                  {Object.entries(row).map(([key, value], cellIndex) => (
-                                    <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-2">
-                                      {isQueryEditable ? (
-                                        <Input
-                                          value={String(value)}
-                                          className="bg-slate-800 border-slate-700 text-slate-300 h-7 text-xs font-mono"
-                                          onChange={(e) => {
-                                            const updatedResult = [...queryResult];
-                                            updatedResult[rowIndex] = {
-                                              ...updatedResult[rowIndex],
-                                              [key]: e.target.value
-                                            };
-                                            setQueryResult(updatedResult);
-                                          }}
-                                        />
-                                      ) : (
-                                        <span className="font-mono">{String(value)}</span>
-                                      )}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        ) : (
-                          <div className="text-slate-400 p-4 text-center">
-                            No results to display. Execute a query to see data.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="users" key="users">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                {showUserEditor ? (
-                  <ErrorBoundary>
-                    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                      <UserEditor 
-                        user={userToEdit} 
-                        onClose={() => setShowUserEditor(false)} 
-                        onSave={handleUserSaved}
-                      />
-                    </Suspense>
-                  </ErrorBoundary>
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                          <Users className="h-5 w-5 text-blue-600" />
-                          User Management
-                        </CardTitle>
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={handleAddUser}
-                            className="gap-1"
-                            size="sm"
-                            variant="outline"
-                          >
-                            <UserPlus className="h-4 w-4" /> Add Single User
-                          </Button>
-                          <Button 
-                            onClick={handleAddUser}
-                            className="gap-1"
-                            size="sm"
-                          >
-                            <PlusCircle className="h-4 w-4" /> Bulk Add Users
-                          </Button>
-                        </div>
-                      </div>
-                      <CardDescription>
-                        View and manage platform users
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="relative flex-1">
-                          <Input
-                            placeholder="Search users by name, email or ID..."
-                            className="pl-9"
-                          />
-                          <div className="absolute left-3 top-3 text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                          </div>
-                        </div>
-                        <Select defaultValue="all">
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All users</SelectItem>
-                            <SelectItem value="active">Active users</SelectItem>
-                            <SelectItem value="inactive">Inactive users</SelectItem>
-                            <SelectItem value="suspended">Suspended users</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button variant="outline" size="sm" className="gap-1">
-                          <FileDown className="h-4 w-4" /> Export
-                        </Button>
-                      </div>
-                      
-                      <div className="rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>ID</TableHead>
-                              <TableHead>Username</TableHead>
-                              <TableHead>Email</TableHead>
-                              <TableHead>Reputation</TableHead>
-                              <TableHead>Joined Date</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {users.map((user) => (
-                              <TableRow key={user.id}>
-                                <TableCell className="font-mono text-xs">{user.id}</TableCell>
-                                <TableCell className="font-medium">{user.username}</TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>
-                                  <div className="w-24 flex items-center">
-                                    <ErrorBoundary>
-                                      <span className="font-semibold mr-2">{user.reputation}</span>
-                                      <Select defaultValue={user.reputation.toString()} onValueChange={(value) => {
-                                        const updatedUser = {...user, reputation: parseFloat(value)};
-                                        addUser(updatedUser);
-                                        toast({
-                                          title: "Reputation updated",
-                                          description: `${user.username}'s reputation updated to ${value}`,
-                                        });
-                                      }}>
-                                        <SelectTrigger className="w-16 h-7">
-                                          <SelectValue placeholder="Score" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="0">0</SelectItem>
-                                          <SelectItem value="1">1</SelectItem>
-                                          <SelectItem value="2">2</SelectItem>
-                                          <SelectItem value="3">3</SelectItem>
-                                          <SelectItem value="4">4</SelectItem>
-                                          <SelectItem value="5">5</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </ErrorBoundary>
-                                  </div>
-                                </TableCell>
-                                <TableCell>{user.joinedDate}</TableCell>
-                                <TableCell>
-                                  <Select defaultValue={user.status || "active"} onValueChange={(value) => {
-                                    toast({
-                                      title: "Status updated",
-                                      description: `${user.username}'s status updated to ${value}`,
-                                    });
-                                  }}>
-                                    <SelectTrigger className="w-28 h-7">
-                                      <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="active">
-                                        <span className="flex items-center gap-1">
-                                          <Check className="h-3 w-3 text-green-500" /> Active
-                                        </span>
-                                      </SelectItem>
-                                      <SelectItem value="inactive">
-                                        <span className="flex items-center gap-1">
-                                          <XCircle className="h-3 w-3 text-red-500" /> Inactive
-                                        </span>
-                                      </SelectItem>
-                                      <SelectItem value="suspended">
-                                        <span className="flex items-center gap-1">
-                                          <Clock className="h-3 w-3 text-amber-500" /> Suspended
-                                        </span>
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="text-blue-600 hover:text-blue-900"
-                                      >
-                                        Actions
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
-                                        <Edit className="h-4 w-4 mr-2" /> Edit User
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        className="text-purple-600"
-                                        onClick={handleAddAdmin}
-                                      >
-                                        <ShieldCheck className="h-4 w-4 mr-2" /> Make Admin
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem 
-                                        className="text-red-600"
-                                        onClick={() => handleDeleteUser(user.id)}
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-2" /> Delete User
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="items" key="items">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                {showItemEditor ? (
-                  <ErrorBoundary>
-                    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                      <ItemEditor 
-                        item={itemToEdit} 
-                        onClose={() => setShowItemEditor(false)} 
-                        onSave={handleItemSaved}
-                      />
-                    </Suspense>
-                  </ErrorBoundary>
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>Item Management</CardTitle>
-                        <Button 
-                          onClick={handleAddItem}
-                          className="gap-1"
-                          size="sm"
-                        >
-                          <Plus className="h-4 w-4" /> Add Item
-                        </Button>
-                      </div>
-                      <CardDescription>
-                        Manage all items listed on the platform
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>ID</TableHead>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Category</TableHead>
-                              <TableHead>Condition</TableHead>
-                              <TableHead>Owner</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Posted Date</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {items.map((item) => {
-                              const owner = users.find(u => u.id === item.userId);
-                              return (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-mono text-xs">{item.id}</TableCell>
-                                  <TableCell className="font-medium">{item.name}</TableCell>
-                                  <TableCell>{item.category}</TableCell>
-                                  <TableCell>{item.condition}</TableCell>
-                                  <TableCell>{owner?.username || 'Unknown'}</TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center">
-                                      <span className={`mr-2 h-2 w-2 rounded-full ${item.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                      <span>{item.isAvailable ? 'Available' : 'Not Available'}</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{item.postedDate}</TableCell>
-                                  <TableCell className="text-right">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm">Actions</Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleEditItem(item.id)}>
-                                          <Edit className="h-4 w-4 mr-2" /> Edit Item
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleUpdateItemStatus(item.id, !item.isAvailable)}>
-                                          {item.isAvailable ? (
-                                            <>
-                                              <XCircle className="h-4 w-4 mr-2 text-orange-500" /> Mark Unavailable
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Check className="h-4 w-4 mr-2 text-green-500" /> Mark Available
-                                            </>
-                                          )}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => handleDeleteItem(item.id)}>
-                                          <Trash2 className="h-4 w-4 mr-2 text-red-500" /> Delete Item
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="activity" key="activity">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ErrorBoundary>
-                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                    <ActivityLog />
-                  </Suspense>
-                </ErrorBoundary>
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="analytics" key="analytics">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ErrorBoundary>
-                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                    <AdminCharts />
-                  </Suspense>
-                </ErrorBoundary>
-              </motion.div>
-            </TabsContent>
-            
-            <TabsContent value="export" key="export">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ErrorBoundary>
-                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-                    <DataExport />
-                  </Suspense>
-                </ErrorBoundary>
-              </motion.div>
-            </TabsContent>
-          </AnimatePresence>
-        </Tabs>
+        {showUserEditor ? (
+          <ErrorBoundary>
+            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+              <UserEditor 
+                user={userToEdit} 
+                onClose={() => setShowUserEditor(false)} 
+                onSave={handleUserSaved}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        ) : showItemEditor ? (
+          <ErrorBoundary>
+            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+              <ItemEditor 
+                item={itemToEdit} 
+                onClose={() => setShowItemEditor(false)} 
+                onSave={handleItemSaved}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        ) : (
+          <DashboardTabs 
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            users={users}
+            items={items}
+            trades={trades}
+            offers={offers}
+            showUserEditor={showUserEditor}
+            showItemEditor={showItemEditor}
+            handleEditUser={handleEditUser}
+            handleAddUser={handleAddUser}
+            handleAddItem={handleAddItem}
+            handleEditItem={handleEditItem}
+            handleDeleteUser={handleDeleteUser}
+            handleDeleteItem={handleDeleteItem}
+            handleUpdateItemStatus={handleUpdateItemStatus}
+            handleAddAdmin={handleAddAdmin}
+            addUser={addUser}
+          />
+        )}
         
         {showAdminEditor && (
           <ErrorBoundary>
