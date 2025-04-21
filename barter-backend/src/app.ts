@@ -41,6 +41,17 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// --- Security and Cache Headers Middleware ---
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'no-store');
+  res.removeHeader('X-XSS-Protection');
+  res.removeHeader('X-Frame-Options');
+  // Optionally set Content-Security-Policy for frame-ancestors
+  // res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+  next();
+});
+
 // --- Require Admin Session Middleware ---
 function requireAdminSession(req: Request, res: Response, next: NextFunction) {
   // For demo: check for a cookie called 'admin_session' (could be JWT or user id)
@@ -57,18 +68,17 @@ app.post("/api/admin-login", async (req: Request, res: Response) => {
 
   // --- Input validation ---
   if (!username && !email) {
-    return res.status(400).json({ message: "Username or email is required" });
+    return res.status(400).json({ success: false, message: "Username or email is required" });
   }
   if (!password) {
-    return res.status(400).json({ message: "Password is required" });
+    return res.status(400).json({ success: false, message: "Password is required" });
   }
   if (typeof password !== 'string' || password.length < 8) {
-    return res.status(400).json({ message: "Password must be at least 8 characters long" });
+    return res.status(400).json({ success: false, message: "Password must be at least 8 characters long" });
   }
 
   try {
     // Find user with matching username OR email (case-insensitive) and password (case-sensitive)
-    // --- Manual case-insensitive check for Postgres ---
     const users = await prisma.user.findMany();
     const admins = await prisma.admin.findMany();
     console.log("[ADMIN LOGIN DEBUG] All users:", users);
@@ -83,18 +93,32 @@ app.post("/api/admin-login", async (req: Request, res: Response) => {
     );
     console.log("[ADMIN LOGIN DEBUG] User found:", user);
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
     // Check if user is admin
-    const admin = await prisma.admin.findUnique({ where: { userId: user.id } });
+    const admin = admins.find(a => a.userId === user.id);
     console.log("[ADMIN LOGIN DEBUG] Admin found:", admin);
     if (!admin) {
-      return res.status(401).json({ error: "Not an admin user" });
+      return res.status(401).json({ success: false, message: "Not an admin user" });
     }
-    res.json({ user, admin });
+    // Set admin_session cookie (for demo, just user id; in production use JWT)
+    res.cookie("admin_session", user.id, {
+      httpOnly: true,
+      sameSite: "none", // Changed from 'lax' to 'none' for cross-origin support
+      secure: false, // Remain false for local HTTP development
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 2, // 2 hours
+    });
+    console.log("[ADMIN LOGIN] Set-Cookie: admin_session=", user.id);
+    return res.json({
+      success: true,
+      message: "Admin login successful",
+      user: { id: user.id, username: user.username, email: user.email },
+      admin
+    });
   } catch (err) {
     console.error("[ADMIN LOGIN DEBUG] Error during admin login:", err);
-    res.status(400).json({ error: "Admin login failed", details: err });
+    res.status(500).json({ success: false, message: "Admin login failed", details: err });
   }
 });
 

@@ -86,8 +86,9 @@ pgClient.on("error", (err: Error) => {
 });
 
 // Start server
-server.listen(process.env.PORT, () => {
-  console.log(`Server started on port ${process.env.PORT}`);
+const PORT = process.env.PORT || 15000;
+server.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
 });
 
 // --- ITEMS ---
