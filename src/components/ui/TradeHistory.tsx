@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 
 export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
-  const { getUserTrades, offers, getItemById, getUserById } = useBarterContext();
+  const { getUserTrades, trades, offers, items, getItemById, getUserById, isAdmin } = useBarterContext();
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -27,16 +27,23 @@ export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const trades = getUserTrades(userId);
+  // Show all trades for admin, or user-specific trades otherwise
+  const tradesToShow = isAdmin ? trades : getUserTrades(userId);
+
+  // Debug logs
+  console.log("All items:", items);
 
   // Process trade data to include more details
-  const tradeItems = trades.map(trade => {
+  const tradeItems = tradesToShow.map(trade => {
     const offer = offers.find(o => o.id === trade.offerId);
     
     if (!offer) return null;
     
     const itemOffered = getItemById(offer.itemOfferedId);
     const itemRequested = getItemById(offer.itemRequestedId);
+    console.log("Offer IDs:", offer.itemOfferedId, offer.itemRequestedId);
+    console.log("Item Offered:", itemOffered);
+    console.log("Item Requested:", itemRequested);
     const offerMaker = getUserById(offer.fromUserId);
     const offerReceiver = getUserById(offer.toUserId);
     
@@ -48,6 +55,9 @@ export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
       itemOfferedCategory: itemOffered?.category || 'Unknown',
       itemRequested: itemRequested?.name || 'Unknown Item',
       itemRequestedCategory: itemRequested?.category || 'Unknown',
+      // Both usernames for clarity
+      userSender: offerMaker?.username || 'Unknown User',
+      userReceiver: offerReceiver?.username || 'Unknown User',
       withUser: offer.fromUserId === userId 
         ? offerReceiver?.username || 'Unknown User'
         : offerMaker?.username || 'Unknown User',
@@ -106,7 +116,7 @@ export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <PackageCheck className="h-4 w-4 text-green-500" />
-                      <span className="text-sm font-medium">Trade with {trade.withUser}</span>
+                      <span className="text-sm font-medium">Trade between {trade.userSender} and {trade.userReceiver}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">{trade.tradeDate}</span>
                   </div>
@@ -161,7 +171,7 @@ export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Date</TableHead>
-                        <TableHead>Traded With</TableHead>
+                        <TableHead>Users</TableHead>
                         <TableHead>Sent</TableHead>
                         <TableHead>Received</TableHead>
                       </TableRow>
@@ -170,7 +180,7 @@ export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
                       {tradeItems.map((trade, index) => (
                         <TableRow key={trade.id || `row-${index}`}>
                           <TableCell>{trade.tradeDate}</TableCell>
-                          <TableCell>{trade.withUser}</TableCell>
+                          <TableCell>{trade.userSender} &rarr; {trade.userReceiver}</TableCell>
                           <TableCell>{trade.isUserSender ? trade.itemOffered : trade.itemRequested}</TableCell>
                           <TableCell>{trade.isUserSender ? trade.itemRequested : trade.itemOffered}</TableCell>
                         </TableRow>

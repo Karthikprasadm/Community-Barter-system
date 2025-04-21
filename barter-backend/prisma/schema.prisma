@@ -1,0 +1,108 @@
+// Barter Community Nexus DBMS/SQL-focused schema
+// Defines Users, Items, Trades, Offers, Ratings with relations
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  username   String   @unique
+  email      String   @unique
+  password   String   @default("changeme")
+  joinedDate DateTime @default(now())
+  reputation Float    @default(0) // <-- Added reputation field
+  items      Item[]
+  offers     Offer[]   @relation("UserOffers")
+  ratings    Rating[] @relation("UserRatings")
+  receivedOffers Offer[] @relation("UserReceivedOffers")
+  admin      Admin?   // <-- Reverse relation to Admin
+}
+
+model Admin {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  isHeadAdmin Boolean  @default(false)
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+
+
+model Item {
+  @@index([userId])
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  category    String
+  condition   String
+  isAvailable Boolean  @default(true)
+  postedDate  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  offers      Offer[]  @relation("ItemOffers")
+  requestedInOffers Offer[] @relation("RequestedItemOffers")
+  imageUrl    String?  // Optional image URL for item
+}
+
+model Offer {
+  @@index([fromUserId])
+  @@index([toUserId])
+  id             Int      @id @default(autoincrement())
+  fromUserId     Int
+  toUserId       Int
+  itemOfferedId  Int
+  itemRequestedId Int
+  status         String   // pending, accepted, rejected
+  offerDate      DateTime @default(now())
+  fromUser       User     @relation("UserOffers", fields: [fromUserId], references: [id])
+  toUser         User     @relation("UserReceivedOffers", fields: [toUserId], references: [id])
+  itemOffered    Item     @relation("ItemOffers", fields: [itemOfferedId], references: [id])
+  itemRequested  Item     @relation("RequestedItemOffers", fields: [itemRequestedId], references: [id])
+  trade          Trade?
+}
+
+
+model Trade {
+  id        Int      @id @default(autoincrement())
+  offerId   Int     @unique
+  tradeDate DateTime @default(now())
+  notes     String?
+  offer     Offer    @relation(fields: [offerId], references: [id])
+  ratings   Rating[]
+}
+
+
+model Rating {
+  @@index([userId])
+  @@index([tradeId])
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  raterId    Int
+  tradeId    Int
+  ratingValue Int
+  comment    String?
+  ratingDate DateTime @default(now())
+  user       User     @relation("UserRatings", fields: [userId], references: [id])
+  trade      Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+}
+
+
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+  type        String
+  description String
+  userId      Int?
+  username    String?
+}
+

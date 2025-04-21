@@ -23,14 +23,23 @@ import {
 
 export const AdminCharts = () => {
   const { users, items, trades, offers } = useBarterContext();
-  
   // Process data for charts using utility functions
   const categoryData = getCategoryData(items);
   const tradeActivityData = getTradeActivityByMonth(trades, offers);
   const reputationData = getReputationData(users);
   const itemStatusData = getItemStatusData(items);
   const userActivityData = getUserActivityMetrics(users, items, trades);
-  
+  // Debug logs
+  console.log('users:', users);
+  console.log('items:', items);
+  console.log('trades:', trades);
+  console.log('offers:', offers);
+  console.log('categoryData:', categoryData);
+  console.log('tradeActivityData:', tradeActivityData);
+  console.log('reputationData:', reputationData);
+  console.log('itemStatusData:', itemStatusData);
+  console.log('userActivityData:', userActivityData);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -53,6 +62,9 @@ export const AdminCharts = () => {
             
             <TabsContent value="categories">
               <CategoryCharts categoryData={categoryData} />
+              <div className="mt-8 mb-8 max-w-4xl mx-auto">
+                <UserActivityMetrics userActivityData={userActivityData} />
+              </div>
             </TabsContent>
             
             <TabsContent value="activity">
@@ -70,8 +82,7 @@ export const AdminCharts = () => {
         </CardContent>
       </Card>
 
-      {/* Additional Analytics - Using Real Data */}
-      <UserActivityMetrics userActivityData={userActivityData} />
+
     </motion.div>
   );
 };

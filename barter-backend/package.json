@@ -1,0 +1,42 @@
+{
+  "name": "barter-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "test": "jest",
+    "seed": "prisma db seed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "pg": "^8.14.1",
+    "prisma": "^6.6.0"
+  },
+  "prisma": {
+    "seed": "ts-node ./prisma/seed.ts"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.14.1",
+    "@types/node-fetch": "^2.6.12",
+    "@types/pg": "^8.11.13",
+    "@types/supertest": "^6.0.3",
+    "node-fetch": "^2.7.0",
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.1.0",
+    "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

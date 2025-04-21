@@ -1,3 +1,26 @@
+// Helper: Calculate percent change between current and previous month
+function getMonthlyChange(dateStrings: string[]): number {
+  if (!dateStrings.length) return 0;
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  // Previous month (handle January)
+  const prevMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+  const prevMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+  let thisMonthCount = 0;
+  let prevMonthCount = 0;
+  for (const dateStr of dateStrings) {
+    const d = new Date(dateStr);
+    if (d.getFullYear() === thisYear && d.getMonth() === thisMonth) {
+      thisMonthCount++;
+    } else if (d.getFullYear() === prevMonthYear && d.getMonth() === prevMonth) {
+      prevMonthCount++;
+    }
+  }
+  if (prevMonthCount === 0) return thisMonthCount > 0 ? 100 : 0;
+  return Math.round(((thisMonthCount - prevMonthCount) / prevMonthCount) * 100);
+}
 
 import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
@@ -150,18 +173,20 @@ const AdminDashboard = () => {
             </h1>
             <p className="text-gray-600 mt-1">Manage all aspects of the BarterNexus platform</p>
           </div>
-          
           <Button size="sm" variant="outline" className="gap-2" onClick={() => window.location.reload()}>
             <RefreshCw className="h-4 w-4" />
             Refresh Data
           </Button>
         </div>
-        
-        <DashboardStats 
-          userCount={users.length} 
-          activeItemCount={items.filter(item => item.isAvailable).length} 
-          tradeCount={trades.length} 
+        <DashboardStats
+          userCount={users.length}
+          activeItemCount={items.filter(item => item.isAvailable).length}
+          tradeCount={trades.length}
+          userChange={getMonthlyChange(users.map(u => u.joinedDate))}
+          itemChange={getMonthlyChange(items.filter(i => i.isAvailable).map(i => i.postedDate))}
+          tradeChange={getMonthlyChange(trades.map(t => t.tradeDate))}
         />
+  // Previous month (handle January)
         
         {showUserEditor ? (
           <ErrorBoundary>

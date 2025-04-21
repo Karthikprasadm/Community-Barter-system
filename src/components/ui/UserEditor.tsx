@@ -177,33 +177,45 @@ export const UserEditor: React.FC<UserEditorProps> = ({ user, onClose, onSave })
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="reputation"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Reputation Score (0-5)</FormLabel>
-                      <FormControl>
-                        <div className="space-y-2">
-                          <Input 
-                            type="number" 
-                            step="0.1" 
-                            min="0" 
-                            max="5" 
-                            {...field} 
-                          />
-                          <div className="pt-1">
-                            <UserReputation 
-                              score={parseFloat(field.value?.toString() || "0")} 
-                              showTooltip={false} 
+                {isAdmin ? (
+                  <FormField
+                    control={form.control}
+                    name="reputation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reputation Score (0-5)</FormLabel>
+                        <FormControl>
+                          <div className="space-y-2">
+                            <Input 
+                              type="number" 
+                              step="0.1" 
+                              min="0" 
+                              max="5" 
+                              {...field} 
                             />
+                            <div className="pt-1">
+                              <UserReputation 
+                                score={parseFloat(field.value?.toString() || "0")} 
+                                showTooltip={false} 
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Reputation Score (0-5)</label>
+                    <div className="pt-1">
+                      <UserReputation 
+                        score={user?.reputation || 0}
+                        showTooltip={false}
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 <FormField
                   control={form.control}

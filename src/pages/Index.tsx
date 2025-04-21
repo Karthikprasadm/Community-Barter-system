@@ -20,39 +20,38 @@ import { useBarterContext } from "@/context/BarterContext";
 const Index = () => {
   const { items, users } = useBarterContext();
   
-  // Featured categories
-  const categories = [
-    { 
-      name: "Electronics", 
+  // Featured categories - dynamic item counts
+  const featuredCategories = [
+    {
+      name: "Electronics",
       icon: <Package className="h-8 w-8 text-barter-accent" />,
       description: "Gadgets, computers, phones, and more",
-      itemCount: 42
     },
-    { 
-      name: "Sports", 
+    {
+      name: "Sports",
       icon: <Bike className="h-8 w-8 text-barter-accent" />,
       description: "Equipment, clothing, and accessories",
-      itemCount: 35
     },
-    { 
-      name: "Books", 
+    {
+      name: "Books",
       icon: <BookOpen className="h-8 w-8 text-barter-accent" />,
       description: "Fiction, non-fiction, and textbooks",
-      itemCount: 59
     },
-    { 
-      name: "Kitchen", 
+    {
+      name: "Kitchen",
       icon: <Utensils className="h-8 w-8 text-barter-accent" />,
       description: "Appliances, utensils, and cookware",
-      itemCount: 27
     },
-    { 
-      name: "Clothing", 
+    {
+      name: "Clothing",
       icon: <Shirt className="h-8 w-8 text-barter-accent" />,
       description: "Apparel for all ages and seasons",
-      itemCount: 83
-    }
+    },
   ];
+
+  // Calculate real-time item counts for each featured category
+  const getCategoryItemCount = (categoryName: string) =>
+    items.filter((item) => item.category === categoryName).length;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -109,17 +108,26 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {categories.map((category, index) => (
-                <Card key={index} className="border-none shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
-                  <CardContent className="pt-6 flex flex-col items-center text-center h-full">
-                    <div className="mb-4">{category.icon}</div>
-                    <h3 className="text-xl font-semibold mb-2">{category.name}</h3>
-                    <p className="text-gray-600 text-sm mb-3">{category.description}</p>
-                    <div className="bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-700 mt-auto">
-                      {category.itemCount} items available
-                    </div>
-                  </CardContent>
-                </Card>
+              {featuredCategories.map((category, index) => (
+                <Link
+                  key={index}
+                  to={`/marketplace?category=${encodeURIComponent(category.name)}`}
+                  className="focus:outline-none group"
+                  tabIndex={0}
+                  aria-label={`Browse ${category.name}`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <Card className="border-none shadow-md transition-all cursor-pointer h-full group-hover:shadow-xl group-hover:-translate-y-2 group-focus:shadow-xl group-focus:-translate-y-2 ring-0 group-focus-visible:ring-2 group-focus-visible:ring-barter-accent">
+                    <CardContent className="pt-6 flex flex-col items-center text-center h-full">
+                      <div className="mb-4 group-hover:scale-110 group-focus:scale-110 transition-transform duration-150">{category.icon}</div>
+                      <h3 className="text-xl font-semibold mb-2 group-hover:text-barter-accent group-focus:text-barter-accent transition-colors">{category.name}</h3>
+                      <p className="text-gray-600 text-sm mb-3">{category.description}</p>
+                      <div className="bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-700 mt-auto group-hover:bg-barter-accent/20 group-focus:bg-barter-accent/20 transition-colors">
+                        {getCategoryItemCount(category.name)} items available
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>

@@ -25,74 +25,16 @@ import { motion } from "framer-motion";
 type ActivityType = 'login' | 'item' | 'user' | 'trade' | 'offer' | 'system';
 
 interface ActivityEntry {
-  id: string;
+  id: number;
   timestamp: string;
   type: ActivityType;
   description: string;
-  userId?: string;
+  userId?: number;
   username?: string;
 }
 
-const MOCK_ACTIVITIES: ActivityEntry[] = [
-  { 
-    id: 'act1', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), 
-    type: 'login', 
-    description: 'Admin login successful', 
-    userId: 'admin',
-    username: 'Admin'
-  },
-  { 
-    id: 'act2', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), 
-    type: 'user', 
-    description: 'User profile updated', 
-    userId: 'user1',
-    username: 'john_doe'
-  },
-  { 
-    id: 'act3', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), 
-    type: 'item', 
-    description: 'New item added: Vintage Camera', 
-    userId: 'user1',
-    username: 'john_doe'
-  },
-  { 
-    id: 'act4', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), 
-    type: 'trade', 
-    description: 'Trade completed between user2 and user4', 
-  },
-  { 
-    id: 'act5', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), 
-    type: 'system', 
-    description: 'Daily system backup completed', 
-  },
-  { 
-    id: 'act6', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), 
-    type: 'offer', 
-    description: 'New offer created: Hiking Boots for Fiction Book Collection', 
-    userId: 'user1',
-    username: 'john_doe'
-  },
-  { 
-    id: 'act7', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), 
-    type: 'login', 
-    description: 'Failed login attempt', 
-  },
-  { 
-    id: 'act8', 
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), 
-    type: 'user', 
-    description: 'New user registered', 
-    userId: 'user4',
-    username: 'sam_taylor'
-  },
-];
+// import io from 'socket.io-client';
+import { useEffect } from 'react';
 
 const typeColors: Record<ActivityType, string> = {
   login: 'bg-blue-100 text-blue-800',
@@ -117,14 +59,27 @@ export const ActivityLog: React.FC = () => {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [filter, setFilter] = useState<string | undefined>(undefined);
   
-  // Simulate loading data
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setActivities(MOCK_ACTIVITIES);
-      setIsLoading(false);
-    }, 1200);
-    
-    return () => clearTimeout(timer);
+  // Fetch real activities from backend and listen for real-time updates
+  useEffect(() => {
+    setIsLoading(true);
+    fetch(`${import.meta.env.VITE_API_URL}/api/activity-log`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        setActivities(data);
+        setIsLoading(false);
+      });
+    // Real-time updates
+    // Dynamically import socket.io-client to avoid SSR issues
+    let socket;
+    import('socket.io-client').then(({ default: io }) => {
+      socket = io(import.meta.env.VITE_API_URL);
+      socket.on('activity_log_update', (newActivity) => {
+        setActivities(prev => [newActivity, ...prev]);
+      });
+    });
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, []);
   
   const formatTimestamp = (timestamp: string) => {
@@ -152,16 +107,21 @@ export const ActivityLog: React.FC = () => {
     ? activities.filter(activity => activity.type === filter)
     : activities;
     
-  const handleClearLogs = () => {
+  const handleClearLogs = async () => {
+    setIsLoading(true);
+    await fetch(`${import.meta.env.VITE_API_URL}/api/activity-log/clear`, { method: 'POST', credentials: 'include' });
     setActivities([]);
+    setIsLoading(false);
   };
   
   const handleRefresh = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setActivities(MOCK_ACTIVITIES);
-      setIsLoading(false);
-    }, 800);
+    fetch(`${import.meta.env.VITE_API_URL}/api/activity-log`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        setActivities(data);
+        setIsLoading(false);
+      });
   };
   
   const handleExport = () => {

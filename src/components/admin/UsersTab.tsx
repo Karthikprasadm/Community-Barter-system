@@ -1,5 +1,6 @@
 
 import React from "react";
+import { User, Item } from '@/types';
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -35,13 +36,13 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 
 interface UsersTabProps {
-  users: any[];
-  items: any[];
+  users: User[];
+  items: Item[];
   handleEditUser: (userId: string) => void;
   handleAddUser: () => void;
   handleDeleteUser: (userId: string) => void;
   handleAddAdmin: () => void;
-  addUser: (user: any) => void;
+  addUser: (user: User) => void;
 }
 
 export const UsersTab = ({ 
@@ -53,6 +54,8 @@ export const UsersTab = ({
   handleAddAdmin, 
   addUser 
 }: UsersTabProps) => {
+  // Defensive: always use an array
+  const safeUsers = Array.isArray(users) ? users : [];
   const { toast } = useToast();
 
   return (
@@ -132,7 +135,7 @@ export const UsersTab = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {safeUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-mono text-xs">{user.id}</TableCell>
                     <TableCell className="font-medium">{user.username}</TableCell>
@@ -140,8 +143,8 @@ export const UsersTab = ({
                     <TableCell>
                       <div className="w-24 flex items-center">
                         <ErrorBoundary>
-                          <span className="font-semibold mr-2">{user.reputation}</span>
-                          <Select defaultValue={user.reputation.toString()} onValueChange={(value) => {
+                          <span className="font-semibold mr-2">{user.reputation ?? 0}</span>
+                          <Select defaultValue={(user.reputation ?? 0).toString()} onValueChange={(value) => {
                             const updatedUser = {...user, reputation: parseFloat(value)};
                             addUser(updatedUser);
                             toast({
@@ -164,7 +167,7 @@ export const UsersTab = ({
                         </ErrorBoundary>
                       </div>
                     </TableCell>
-                    <TableCell>{user.joinedDate}</TableCell>
+                    <TableCell>{user.joinedDate ? new Date(user.joinedDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : ''}</TableCell>
                     <TableCell>
                       <Select defaultValue={user.status || "active"} onValueChange={(value) => {
                         toast({

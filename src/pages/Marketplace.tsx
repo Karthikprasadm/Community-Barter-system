@@ -5,15 +5,16 @@ import { Item } from "@/types";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { ItemGrid } from "@/components/ui/ItemGrid";
 import { Header } from "@/components/layout/Header";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const Marketplace = () => {
   const { items, users } = useBarterContext();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [filteredItems, setFilteredItems] = useState<Item[]>(items);
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
-    category: "",
+    category: searchParams.get("category") || "",
     condition: "",
   });
 
@@ -40,19 +41,25 @@ const Marketplace = () => {
     setFilteredItems(results);
   }, [filters, items]);
 
-  // Update search filter when URL parameters change
+  // Update search and category filters when URL parameters change
   useEffect(() => {
     const searchParam = searchParams.get("search");
-    if (searchParam) {
-      setFilters(prevFilters => ({
-        ...prevFilters,
-        search: searchParam
-      }));
-    }
+    const categoryParam = searchParams.get("category");
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      search: searchParam || "",
+      category: categoryParam || "",
+    }));
   }, [searchParams]);
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
+    // Sync filters to URL
+    const params = new URLSearchParams();
+    if (newFilters.search) params.set("search", newFilters.search);
+    if (newFilters.category) params.set("category", newFilters.category);
+    if (newFilters.condition) params.set("condition", newFilters.condition);
+    navigate({ search: params.toString() }, { replace: true });
   };
 
   return (

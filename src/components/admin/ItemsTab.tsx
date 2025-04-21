@@ -25,8 +25,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 
 interface ItemsTabProps {
-  users: any[];
-  items: any[];
+  users: User[];
+  items: Item[];
   handleEditItem: (itemId: string) => void;
   handleAddItem: () => void;
   handleDeleteItem: (itemId: string) => void;
@@ -43,6 +43,19 @@ export const ItemsTab = ({
 }: ItemsTabProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+
+  // Example API call using apiUrl from .env
+  React.useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    fetch(`${apiUrl}/api/items`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('Fetched items from backend:', data);
+      })
+      .catch(err => {
+        console.error('Error fetching items:', err);
+      });
+  }, []);
 
   // Filter items based on search term
   const filteredItems = items.filter(item => 

@@ -85,7 +85,7 @@ export const Header = () => {
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={currentUser.profileImage} alt={currentUser.username} />
-                      <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>{(currentUser?.username?.charAt(0) || '?').toUpperCase()}</AvatarFallback>
                     </Avatar>
                     {isAdmin && (
                       <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
@@ -150,7 +150,7 @@ export const Header = () => {
               <Button asChild>
                 <Link to="/register">Sign Up</Link>
               </Button>
-              <Button variant="outline" className="flex items-center gap-1 border-purple-300 text-purple-700 hover:bg-purple-50" asChild>
+              <Button variant="outline" className="flex items-center gap-1 border-purple-300 text-purple-700 hover:bg-purple-200 hover:text-purple-900" asChild>
                 <Link to="/admin-login">
                   <Shield className="h-4 w-4" />
                   <span className="hidden sm:inline">Admin</span>

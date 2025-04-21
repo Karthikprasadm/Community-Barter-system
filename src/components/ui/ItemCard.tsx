@@ -15,7 +15,16 @@ interface ItemCardProps {
 }
 
 export const ItemCard = ({ item, owner, showActions = true }: ItemCardProps) => {
-  const timeAgo = formatDistanceToNow(new Date(item.postedDate), { addSuffix: true });
+  if (!item || !owner || typeof owner.username !== "string") {
+    return <div className="p-4 text-red-500">Invalid item or owner data</div>;
+  }
+  let timeAgo = "Unknown";
+  if (item.postedDate) {
+    const date = new Date(item.postedDate);
+    if (!isNaN(date.getTime())) {
+      timeAgo = formatDistanceToNow(date, { addSuffix: true });
+    }
+  }
 
   // Get condition color
   const getConditionColor = (condition: string) => {
@@ -68,7 +77,7 @@ export const ItemCard = ({ item, owner, showActions = true }: ItemCardProps) => 
             </div>
             <div className="flex items-center gap-1">
               <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
-              <span>{owner.reputation.toFixed(1)}</span>
+              <span>{typeof owner.reputation === "number" ? owner.reputation.toFixed(1) : "N/A"}</span>
             </div>
           </div>
         </CardContent>

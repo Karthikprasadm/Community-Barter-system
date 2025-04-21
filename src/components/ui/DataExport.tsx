@@ -45,7 +45,7 @@ export const DataExport: React.FC = () => {
     setIsExporting(true);
     
     // Prepare export data
-    const exportData: Record<string, any> = {};
+    const exportData: Record<string, unknown> = {};
     
     if (selectedTables.users) exportData.users = users;
     if (selectedTables.items) exportData.items = items;

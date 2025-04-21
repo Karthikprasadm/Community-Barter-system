@@ -13,11 +13,11 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const AdminLogin = () => {
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState(""); // This will be username or email
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{username?: string; password?: string}>({});
+  const [errors, setErrors] = useState<{identifier?: string; password?: string}>({});
   const [pageLoaded, setPageLoaded] = useState(false);
   const { adminLogin } = useBarterContext();
   const navigate = useNavigate();
@@ -32,11 +32,11 @@ const AdminLogin = () => {
   }, []);
 
   const validateForm = () => {
-    const newErrors: {username?: string; password?: string} = {};
+    const newErrors: {identifier?: string; password?: string} = {};
     let isValid = true;
 
-    if (!username.trim()) {
-      newErrors.username = "Username is required";
+    if (!identifier.trim()) {
+      newErrors.identifier = "Username or email is required";
       isValid = false;
     }
 
@@ -62,7 +62,10 @@ const AdminLogin = () => {
     setIsLoading(true);
     
     try {
-      const success = await adminLogin(username, password);
+      // Always trim before sending
+      const trimmedIdentifier = identifier.trim();
+      const trimmedPassword = password.trim();
+      const success = await adminLogin(trimmedIdentifier, trimmedPassword);
       if (success) {
         toast({
           title: "Admin Access Granted",
@@ -152,11 +155,11 @@ const AdminLogin = () => {
                 <form onSubmit={handleSubmit}>
                   <CardContent className="space-y-4 pt-6">
                     <div className="space-y-2">
-                      <Label htmlFor="username" className="flex justify-between">
-                        <span>Username</span>
-                        {errors.username && (
+                      <Label htmlFor="identifier" className="flex justify-between">
+                        <span>Username or Email</span>
+                        {errors.identifier && (
                           <span className="text-red-500 text-xs flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" /> {errors.username}
+                            <AlertCircle className="h-3 w-3" /> {errors.identifier}
                           </span>
                         )}
                       </Label>
@@ -165,17 +168,17 @@ const AdminLogin = () => {
                           <User className="h-4 w-4" />
                         </div>
                         <Input
-                          id="username"
+                          id="identifier"
                           type="text"
-                          placeholder="admin username"
-                          value={username}
+                          placeholder="admin username or email"
+                          value={identifier}
                           onChange={(e) => {
-                            setUsername(e.target.value);
-                            if (errors.username) setErrors({...errors, username: undefined});
+                            setIdentifier(e.target.value);
+                            if (errors.identifier) setErrors({ ...errors, identifier: undefined });
                           }}
                           className={cn(
                             "pl-10 transition-all duration-200 border-gray-300 focus:border-purple-400",
-                            errors.username ? "border-red-300" : "",
+                            errors.identifier ? "border-red-300" : "",
                             "hover:border-purple-300"
                           )}
                           autoComplete="username"

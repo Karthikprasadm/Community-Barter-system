@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { User, Item, Trade, Offer } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersTab } from "./UsersTab";
 import { ItemsTab } from "./ItemsTab";
@@ -13,10 +14,10 @@ import { ActivityLog } from "@/components/ui/ActivityLog";
 interface DashboardTabsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  users: any[];
-  items: any[];
-  trades: any[];
-  offers: any[];
+  users: User[];
+  items: Item[];
+  trades: Trade[];
+  offers: Offer[];
   showUserEditor: boolean;
   showItemEditor: boolean;
   handleEditUser: (userId: string) => void;
@@ -27,7 +28,7 @@ interface DashboardTabsProps {
   handleDeleteItem: (itemId: string) => void;
   handleUpdateItemStatus: (itemId: string, status: boolean) => void;
   handleAddAdmin: () => void;
-  addUser: (user: any) => void;
+  addUser: (user: User) => void;
 }
 
 export const DashboardTabs = ({
@@ -39,20 +40,25 @@ export const DashboardTabs = ({
   offers,
   handleEditUser,
   handleAddUser,
-  handleAddItem,
-  handleEditItem,
   handleDeleteUser,
+  handleAddAdmin,
+  addUser,
+  handleEditItem,
+  handleAddItem,
   handleDeleteItem,
   handleUpdateItemStatus,
-  handleAddAdmin,
+  showUserEditor,
+  showItemEditor
 }: DashboardTabsProps) => {
-  // State for query history
+  // State for query history (for PerformanceInsightsTab)
   const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
-  
-  // This effect syncs the queryHistory from DatabaseQueryTab
+
+  // Handler for query history updates from DatabaseQueryTab
   const handleQueryHistoryUpdate = (history: QueryHistoryItem[]) => {
     setQueryHistory(history);
   };
+
+// (removed duplicated/erroneous destructuring and implementation)
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -69,11 +75,13 @@ export const DashboardTabs = ({
       <div className="mt-6">
         <TabsContent value="users" className="mt-0">
           <UsersTab 
-            users={users} 
-            onEditUser={handleEditUser}
-            onAddUser={handleAddUser}
-            onDeleteUser={handleDeleteUser}
-            onAddAdmin={handleAddAdmin}
+            users={users}
+            items={items}
+            handleEditUser={handleEditUser}
+            handleAddUser={handleAddUser}
+            handleDeleteUser={handleDeleteUser}
+            handleAddAdmin={handleAddAdmin}
+            addUser={addUser}
           />
         </TabsContent>
         
@@ -81,15 +89,16 @@ export const DashboardTabs = ({
           <ItemsTab 
             items={items}
             users={users}
-            onAddItem={handleAddItem}
-            onEditItem={handleEditItem}
-            onDeleteItem={handleDeleteItem}
-            onUpdateStatus={handleUpdateItemStatus}
+            handleAddItem={handleAddItem}
+            handleEditItem={handleEditItem}
+            handleDeleteItem={handleDeleteItem}
+            handleUpdateItemStatus={handleUpdateItemStatus}
           />
         </TabsContent>
         
         <TabsContent value="trades" className="mt-0">
-          <TradeHistory trades={trades} offers={offers} users={users} />
+          {/* You may want to render TradeHistory for a specific user, e.g. the first user in the list, or allow admin to pick a user. Example below uses first user if available: */}
+          {users.length > 0 && <TradeHistory userId={users[0].id} />}
         </TabsContent>
         
         <TabsContent value="analytics" className="mt-0">
@@ -97,12 +106,13 @@ export const DashboardTabs = ({
         </TabsContent>
         
         <TabsContent value="database" className="mt-0">
-          <DatabaseQueryTab 
-            users={users} 
-            items={items} 
-            trades={trades} 
+          <DatabaseQueryTab
+            users={users}
+            items={items}
+            trades={trades}
             offers={offers}
-            onUpdateQueryHistory={handleQueryHistoryUpdate}
+            queryHistory={queryHistory}
+            setQueryHistory={setQueryHistory}
           />
         </TabsContent>
         
@@ -111,7 +121,7 @@ export const DashboardTabs = ({
         </TabsContent>
         
         <TabsContent value="activity" className="mt-0">
-          <ActivityLog users={users} items={items} trades={trades} />
+          <ActivityLog />
         </TabsContent>
       </div>
     </Tabs>

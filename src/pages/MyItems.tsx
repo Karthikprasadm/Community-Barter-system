@@ -13,10 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { categories, conditions } from "@/data/mockData";
-import { Item } from "@/types";
+import { Item, ItemWithOwner } from "@/types";
 
 const MyItems = () => {
-  const { currentUser, getUserItems, addItem } = useBarterContext();
+  const { currentUser, getUserItems, addItem, isAdmin } = useBarterContext();
   const [open, setOpen] = useState(false);
   const [newItem, setNewItem] = useState({
     name: "",
@@ -26,11 +26,18 @@ const MyItems = () => {
     imageUrl: "",
   });
 
-  if (!currentUser) {
-    return <Navigate to="/login" />;
+  // Block admins from adding items
+  if (!currentUser || isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-2xl font-semibold mb-2">You must be logged in as a regular user to add items.</h2>
+        <p className="text-gray-600 mb-4">Please log in with a user account to manage your items. Admins cannot add trade items.</p>
+        <a href="/login" className="px-4 py-2 bg-barter-primary text-white rounded hover:bg-barter-primary-dark transition">Go to Login</a>
+      </div>
+    );
   }
 
-  const userItems = getUserItems(currentUser.id);
+  const userItems: ItemWithOwner[] = getUserItems(currentUser.id);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -43,7 +50,10 @@ const MyItems = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!currentUser || isAdmin) {
+      alert("You must be logged in as a regular user to add items.");
+      return;
+    }
     addItem({
       name: newItem.name,
       description: newItem.description,
@@ -52,7 +62,6 @@ const MyItems = () => {
       isAvailable: true,
       imageUrl: newItem.imageUrl,
     });
-    
     setNewItem({
       name: "",
       description: "",
@@ -60,7 +69,6 @@ const MyItems = () => {
       condition: "",
       imageUrl: "",
     });
-    
     setOpen(false);
   };
 
@@ -184,7 +192,7 @@ const MyItems = () => {
         {userItems.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {userItems.map((item) => (
-              <ItemCard key={item.id} item={item} owner={currentUser} showActions={false} />
+              <ItemCard key={item.id || item.name + item.category} item={item} owner={item.owner} showActions={false} />
             ))}
           </div>
         ) : (

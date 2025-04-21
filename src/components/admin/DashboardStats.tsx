@@ -8,15 +8,12 @@ type DashboardStatsProps = {
   userCount: number;
   activeItemCount: number;
   tradeCount: number;
+  userChange: number;
+  itemChange: number;
+  tradeChange: number;
 };
 
-export const DashboardStats = ({ userCount, activeItemCount, tradeCount }: DashboardStatsProps) => {
-  // These would ideally be calculated from historical data
-  // For now we'll simulate some percentage changes
-  const userChange = Math.floor(Math.random() * 10) + 1; // 1-10% increase
-  const itemChange = Math.floor(Math.random() * 15) - 5; // -5 to +10% change
-  const tradeChange = Math.floor(Math.random() * 20) - 5; // -5 to +15% change
-  
+export const DashboardStats = ({ userCount, activeItemCount, tradeCount, userChange, itemChange, tradeChange }: DashboardStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <motion.div

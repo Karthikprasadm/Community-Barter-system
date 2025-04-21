@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,81 +18,77 @@ interface PerformanceInsightsTabProps {
   }>;
 }
 
+// Types for chart data
+/**
+ * Chart data for query complexity and type performance.
+ */
+type QueryComplexityData = {
+  name: string;
+  avgTime: number;
+  count: number;
+};
+
+type TimeSeriesData = {
+  name: string;
+  time: number;
+  rows: number;
+};
+
 export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabProps) => {
-  const [queryTimeByComplexity, setQueryTimeByComplexity] = useState<any[]>([]);
-  const [timeSeriesData, setTimeSeriesData] = useState<any[]>([]);
-  const [queryTypePerformance, setQueryTypePerformance] = useState<any[]>([]);
-  
-  useEffect(() => {
-    if (queryHistory.length > 0) {
-      // Process data for visualization
-      processTimeSeriesData();
-      processQueryComplexityData();
-      processQueryTypeData();
-    }
-  }, [queryHistory]);
-  
-  const processTimeSeriesData = () => {
+  // Use explicit types for chart state
+  const [queryTimeByComplexity, setQueryTimeByComplexity] = useState<QueryComplexityData[]>([]);
+  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
+  const [queryTypePerformance, setQueryTypePerformance] = useState<QueryComplexityData[]>([]);
+
+  // Wrap processing functions in useCallback to ensure stable references
+  const processTimeSeriesData = useCallback(() => {
     // Get the 20 most recent queries
     const recentQueries = [...queryHistory].slice(0, 20).reverse();
-    
     const data = recentQueries.map((item, index) => ({
       name: `Q${index + 1}`,
       time: item.executionTime,
       rows: item.rowsReturned
     }));
-    
     setTimeSeriesData(data);
-  };
-  
-  const processQueryComplexityData = () => {
-    // Classify queries by complexity (using simple heuristics)
+  }, [queryHistory]);
+
+  const processQueryComplexityData = useCallback(() => {
     const complexityData = [
       { name: 'Simple', value: 0, count: 0 },
       { name: 'Medium', value: 0, count: 0 },
       { name: 'Complex', value: 0, count: 0 }
     ];
-    
     queryHistory.forEach(item => {
       const query = item.query.toLowerCase();
       let complexityIndex = 0;
-      
-      // Simple heuristics for query complexity
       if (query.includes('join') || query.includes('group by')) {
         complexityIndex = 1; // Medium
       }
-      
       if ((query.match(/join/g) || []).length > 1 || 
           (query.includes('join') && query.includes('group by') && query.includes('having'))) {
         complexityIndex = 2; // Complex
       }
-      
       complexityData[complexityIndex].value += item.executionTime;
       complexityData[complexityIndex].count += 1;
     });
-    
-    // Calculate average execution time per complexity
     const processedData = complexityData.map(item => ({
       name: item.name,
       avgTime: item.count > 0 ? parseFloat((item.value / item.count).toFixed(2)) : 0,
       count: item.count
     }));
-    
     setQueryTimeByComplexity(processedData);
-  };
-  
-  const processQueryTypeData = () => {
+  }, [queryHistory]);
+
+  const processQueryTypeData = useCallback(() => {
     const queryTypes = [
       { name: 'SELECT', value: 0, count: 0 },
       { name: 'SELECT + JOIN', value: 0, count: 0 },
       { name: 'SELECT + GROUP BY', value: 0, count: 0 },
       { name: 'Complex Queries', value: 0, count: 0 }
     ];
-    
     queryHistory.forEach(item => {
       const query = item.query.toLowerCase();
       let typeIndex = 0;
-      
       if (query.includes('join') && !query.includes('group by')) {
         typeIndex = 1; // SELECT + JOIN
       } else if (!query.includes('join') && query.includes('group by')) {
@@ -100,20 +96,24 @@ export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabP
       } else if (query.includes('join') && query.includes('group by')) {
         typeIndex = 3; // Complex
       }
-      
       queryTypes[typeIndex].value += item.executionTime;
       queryTypes[typeIndex].count += 1;
     });
-    
-    // Calculate average execution time per query type
     const processedData = queryTypes.map(item => ({
       name: item.name,
       avgTime: item.count > 0 ? parseFloat((item.value / item.count).toFixed(2)) : 0,
       count: item.count
     }));
-    
     setQueryTypePerformance(processedData);
-  };
+  }, [queryHistory]);
+
+  useEffect(() => {
+    if (queryHistory.length > 0) {
+      processTimeSeriesData();
+      processQueryComplexityData();
+      processQueryTypeData();
+    }
+  }, [queryHistory, processTimeSeriesData, processQueryComplexityData, processQueryTypeData]);
   
   // Calculate overall statistics
   const calculateStats = () => {
@@ -154,6 +154,14 @@ export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabP
               <h3 className="text-lg font-medium text-slate-600">No Query Data Available</h3>
               <p className="text-slate-500 mt-1">
                 Run some SQL queries in the Query tab to generate performance insights.
+              </p>
+            </div>
+          ) : queryHistory.length === 1 ? (
+            <div className="text-center p-6 bg-slate-100 rounded-md">
+              <Server className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-slate-600">Not Enough Data</h3>
+              <p className="text-slate-500 mt-1">
+                Only one query has been executed. Run more queries to see trends and meaningful performance insights.
               </p>
             </div>
           ) : (
@@ -197,15 +205,19 @@ export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabP
                       rows: { label: "Rows Returned", color: "#82ca9d" },
                     }}
                   >
-                    <LineChart data={timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                      <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line yAxisId="left" type="monotone" dataKey="time" stroke="#8884d8" activeDot={{ r: 8 }} />
-                      <Line yAxisId="right" type="monotone" dataKey="rows" stroke="#82ca9d" />
-                    </LineChart>
+                    <div style={{ width: '100%', height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={timeSeriesData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                          <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Line yAxisId="left" type="monotone" dataKey="time" stroke="#8884d8" activeDot={{ r: 8 }} />
+                          <Line yAxisId="right" type="monotone" dataKey="rows" stroke="#82ca9d" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
                   </ChartContainer>
                 </TabsContent>
                 
@@ -216,14 +228,18 @@ export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabP
                       count: { label: "Query Count", color: "#82ca9d" },
                     }}
                   >
-                    <BarChart data={queryTimeByComplexity}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="avgTime" fill="#8884d8" />
-                      <Bar dataKey="count" fill="#82ca9d" />
-                    </BarChart>
+                    <div style={{ width: '100%', height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={queryTimeByComplexity} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="avgTime" fill="#8884d8" />
+                          <Bar dataKey="count" fill="#82ca9d" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </ChartContainer>
                 </TabsContent>
                 
@@ -233,13 +249,17 @@ export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabP
                       avgTime: { label: "Average Time (ms)", color: "#8884d8" },
                     }}
                   >
-                    <AreaChart data={queryTypePerformance}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area type="monotone" dataKey="avgTime" stroke="#8884d8" fill="#8884d8" />
-                    </AreaChart>
+                    <div style={{ width: '100%', height: 320 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={queryTypePerformance} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Area type="monotone" dataKey="avgTime" stroke="#8884d8" fill="#8884d8" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
                   </ChartContainer>
                 </TabsContent>
               </Tabs>
@@ -258,7 +278,7 @@ export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabP
                   <li className="flex items-start gap-2">
                     <div className="min-w-4 h-4 rounded-full bg-green-500 mt-1"></div>
                     <span>
-                      {queryTypePerformance.length > 0 && queryTypePerformance[3].count > 0
+                      {queryTypePerformance.length > 3 && typeof queryTypePerformance[3] === 'object' && queryTypePerformance[3] !== null && 'count' in (queryTypePerformance[3] as Record<string, unknown>) && Number((queryTypePerformance[3] as Record<string, unknown>).count) > 0
                         ? "Complex queries are taking longer to execute. Consider optimizing with indexes."
                         : "You're mostly using simple queries which are executing efficiently."}
                     </span>
@@ -266,7 +286,7 @@ export const PerformanceInsightsTab = ({ queryHistory }: PerformanceInsightsTabP
                   <li className="flex items-start gap-2">
                     <div className="min-w-4 h-4 rounded-full bg-purple-500 mt-1"></div>
                     <span>
-                      {queryHistory.length > 0 
+                      {queryHistory.length > 1 
                         ? `You've executed ${queryHistory.length} queries in this session.`
                         : "Start running queries to generate performance insights."}
                     </span>

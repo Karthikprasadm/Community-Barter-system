@@ -1,0 +1,8 @@
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+  type        String
+  description String
+  userId      Int?
+  username    String?
+}

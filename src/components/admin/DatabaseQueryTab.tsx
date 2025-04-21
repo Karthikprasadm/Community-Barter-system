@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { User, Item, Trade, Offer } from "@/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,11 +22,12 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 
 interface DatabaseQueryTabProps {
-  users: any[];
-  items: any[];
-  trades: any[];
-  offers: any[];
-  onUpdateQueryHistory?: (history: QueryHistoryItem[]) => void;
+  users: User[];
+  items: Item[];
+  trades: Trade[];
+  offers: Offer[];
+  queryHistory: QueryHistoryItem[];
+  setQueryHistory: React.Dispatch<React.SetStateAction<QueryHistoryItem[]>>;
 }
 
 export interface QueryHistoryItem {
@@ -37,12 +39,11 @@ export interface QueryHistoryItem {
   isBookmarked: boolean;
 }
 
-export const DatabaseQueryTab = ({ users, items, trades, offers, onUpdateQueryHistory }: DatabaseQueryTabProps) => {
+export const DatabaseQueryTab = ({ users, items, trades, offers, queryHistory, setQueryHistory }: DatabaseQueryTabProps) => {
   const [sqlQuery, setSqlQuery] = useState("SELECT u.username, COUNT(i.id) as item_count \nFROM users u\nLEFT JOIN items i ON u.id = i.userId\nGROUP BY u.id\nORDER BY item_count DESC;");
-  const [queryResult, setQueryResult] = useState<any[]>([]);
+  const [queryResult, setQueryResult] = useState<unknown[]>([]); // TODO: Specify type for query results based on schema
   const [isQueryExecuting, setIsQueryExecuting] = useState(false);
   const [isQueryEditable, setIsQueryEditable] = useState(false);
-  const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
 
@@ -64,11 +65,7 @@ export const DatabaseQueryTab = ({ users, items, trades, offers, onUpdateQueryHi
         recent: times.slice(-5)
       });
     }
-    
-    if (onUpdateQueryHistory) {
-      onUpdateQueryHistory(queryHistory);
-    }
-  }, [queryHistory, onUpdateQueryHistory]);
+  }, [queryHistory]);
 
   const handleExecuteQuery = () => {
     setIsQueryExecuting(true);
@@ -508,39 +505,41 @@ export const DatabaseQueryTab = ({ users, items, trades, offers, onUpdateQueryHi
             </div>
             
             <div className="overflow-x-auto">
-              {queryResult.length > 0 ? (
+              {queryResult.length > 0 && typeof queryResult[0] === 'object' && queryResult[0] !== null ? (
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-800 text-slate-400 border-b border-slate-700">
-                      {Object.keys(queryResult[0]).map((key) => (
+                      {Object.keys(queryResult[0] as Record<string, unknown>).map((key) => (
                         <th key={key} className="px-4 py-2 text-left font-medium">{key}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {queryResult.map((row, rowIndex) => (
-                      <tr key={rowIndex} className="border-b border-slate-800 hover:bg-slate-800/50">
-                        {Object.entries(row).map(([key, value], cellIndex) => (
-                          <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-2">
-                            {isQueryEditable ? (
-                              <Input
-                                value={String(value)}
-                                className="bg-slate-800 border-slate-700 text-slate-300 h-7 text-xs font-mono"
-                                onChange={(e) => {
-                                  const updatedResult = [...queryResult];
-                                  updatedResult[rowIndex] = {
-                                    ...updatedResult[rowIndex],
-                                    [key]: e.target.value
-                                  };
-                                  setQueryResult(updatedResult);
-                                }}
-                              />
-                            ) : (
-                              <span className="font-mono">{String(value)}</span>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
+                      typeof row === 'object' && row !== null ? (
+                        <tr key={rowIndex} className="border-b border-slate-800 hover:bg-slate-800/50">
+                          {Object.entries(row as Record<string, unknown>).map(([key, value], cellIndex) => (
+                            <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-2">
+                              {isQueryEditable ? (
+                                <Input
+                                  value={String(value)}
+                                  className="bg-slate-800 border-slate-700 text-slate-300 h-7 text-xs font-mono"
+                                  onChange={(e) => {
+                                    const updatedResult = [...queryResult];
+                                    updatedResult[rowIndex] = {
+                                      ...(row as Record<string, unknown>),
+                                      [key]: e.target.value
+                                    };
+                                    setQueryResult(updatedResult);
+                                  }}
+                                />
+                              ) : (
+                                <span className="font-mono">{String(value)}</span>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ) : null
                     ))}
                   </tbody>
                 </table>
