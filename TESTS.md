@@ -26,6 +26,8 @@ This document describes all automated tests run with **Jest** for the Community 
 
 ## 🗂️ Test Files & Specifications
 
+### Backend Tests
+
 ### 1. `api.test.ts`
 - **Purpose:** Core API CRUD tests for users, items, offers, trades, and ratings.
 - **Specs:**
@@ -77,8 +79,27 @@ This document describes all automated tests run with **Jest** for the Community 
 
 ---
 
+### Frontend Tests (Planned)
+- **Purpose:** Unit and integration tests for React components and pages.
+- **Specs:**
+  - To be added: Use Jest and React Testing Library for component and UI logic tests.
+  - Run with: `npm test` or `npx jest` from the project root (when implemented).
+
+---
+
 ## 📋 Notes
 - **Coverage:** These tests cover API correctness, error handling, real-time events, and bulk operations.
+
+---
+
+## 📊 Test Coverage & CI
+- **Coverage:**
+  - Run `npx jest --coverage` to generate a test coverage report (HTML/text summary in `coverage/` directory).
+- **Continuous Integration (CI):**
+  - All pushes and pull requests trigger automated testing and linting via GitHub Actions.
+  - Coverage and build status are checked on every commit.
+- **Frontend:**
+  - When frontend tests are implemented, they will be included in the CI workflow.
 - **Extending:** Add new `.test.ts` files in `barter-backend/tests/` as features grow.
 - **Best Practice:** Run tests before each deployment or after major changes.
 

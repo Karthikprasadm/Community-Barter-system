@@ -5,67 +5,69 @@ This document describes the REST API endpoints for the Community Barter System b
 ---
 
 ## Authentication
-- Most endpoints require authentication (session/cookie or JWT token).
-- Admin endpoints require admin credentials.
+- **User Endpoints:** Require a valid login session (cookie or JWT token).
+- **Admin Endpoints:** Require admin session cookie (`admin_session`) or admin JWT token.
+- **Public Endpoints:** Some endpoints (e.g., registration, login) are public.
+- Always send credentials/cookies with requests to access protected endpoints.
 
 ---
 
 ## Endpoints Overview
 
 ### Users
-| Method | Endpoint        | Description          |
-|--------|----------------|----------------------|
-| GET    | /api/users     | List all users       |
-| GET    | /api/users/:id | Get user by ID       |
-| POST   | /api/users     | Create user          |
-| PUT    | /api/users/:id | Update user          |
-| DELETE | /api/users/:id | Delete user          |
+| Method | Endpoint        | Description          | Auth Required |
+|--------|----------------|----------------------|---------------|
+| GET    | /api/users     | List all users       | Admin         |
+| GET    | /api/users/:id | Get user by ID       | User/Admin    |
+| POST   | /api/users     | Create user          | No            |
+| PUT    | /api/users/:id | Update user          | User/Admin    |
+| DELETE | /api/users/:id | Delete user          | User/Admin    |
 
 ### Items
-| Method | Endpoint        | Description          |
-|--------|----------------|----------------------|
-| GET    | /api/items     | List all items       |
-| GET    | /api/items/:id | Get item by ID       |
-| POST   | /api/items     | Create item          |
-| PUT    | /api/items/:id | Update item          |
-| DELETE | /api/items/:id | Delete item          |
+| Method | Endpoint        | Description          | Auth Required |
+|--------|----------------|----------------------|---------------|
+| GET    | /api/items     | List all items       | User/Admin    |
+| GET    | /api/items/:id | Get item by ID       | User/Admin    |
+| POST   | /api/items     | Create item          | User/Admin    |
+| PUT    | /api/items/:id | Update item          | User/Admin    |
+| DELETE | /api/items/:id | Delete item          | User/Admin    |
 
 ### Offers
-| Method | Endpoint        | Description          |
-|--------|----------------|----------------------|
-| GET    | /api/offers    | List all offers      |
-| GET    | /api/offers/:id| Get offer by ID      |
-| POST   | /api/offers    | Create offer         |
-| PUT    | /api/offers/:id| Update offer         |
-| DELETE | /api/offers/:id| Delete offer         |
+| Method | Endpoint        | Description          | Auth Required |
+|--------|----------------|----------------------|---------------|
+| GET    | /api/offers    | List all offers      | User/Admin    |
+| GET    | /api/offers/:id| Get offer by ID      | User/Admin    |
+| POST   | /api/offers    | Create offer         | User/Admin    |
+| PUT    | /api/offers/:id| Update offer         | User/Admin    |
+| DELETE | /api/offers/:id| Delete offer         | User/Admin    |
 
 ### Trades
-| Method | Endpoint        | Description          |
-|--------|----------------|----------------------|
-| GET    | /api/trades    | List all trades      |
-| GET    | /api/trades/:id| Get trade by ID      |
-| POST   | /api/trades    | Create trade         |
-| PUT    | /api/trades/:id| Update trade         |
-| DELETE | /api/trades/:id| Delete trade         |
+| Method | Endpoint        | Description          | Auth Required |
+|--------|----------------|----------------------|---------------|
+| GET    | /api/trades    | List all trades      | User/Admin    |
+| GET    | /api/trades/:id| Get trade by ID      | User/Admin    |
+| POST   | /api/trades    | Create trade         | User/Admin    |
+| PUT    | /api/trades/:id| Update trade         | User/Admin    |
+| DELETE | /api/trades/:id| Delete trade         | User/Admin    |
 
 ### Ratings
-| Method | Endpoint         | Description         |
-|--------|------------------|---------------------|
-| GET    | /api/ratings     | List all ratings    |
-| GET    | /api/ratings/:id | Get rating by ID    |
-| POST   | /api/ratings     | Create rating       |
-| PUT    | /api/ratings/:id | Update rating       |
-| DELETE | /api/ratings/:id | Delete rating       |
+| Method | Endpoint         | Description         | Auth Required |
+|--------|------------------|---------------------|---------------|
+| GET    | /api/ratings     | List all ratings    | User/Admin    |
+| GET    | /api/ratings/:id | Get rating by ID    | User/Admin    |
+| POST   | /api/ratings     | Create rating       | User/Admin    |
+| PUT    | /api/ratings/:id | Update rating       | User/Admin    |
+| DELETE | /api/ratings/:id | Delete rating       | User/Admin    |
 
 ### Admin & Analytics
-| Method | Endpoint                 | Description                |
-|--------|--------------------------|----------------------------|
-| POST   | /api/admin-login         | Admin login                |
-| GET    | /api/analytics/overview  | Dashboard stats            |
-| GET    | /api/analytics/trades    | Trade analytics            |
-| GET    | /api/analytics/items     | Item analytics             |
-| GET    | /api/activity-log        | Recent activity log        |
-| POST   | /api/sql-query           | Run custom SQL queries     |
+| Method | Endpoint                 | Description                | Auth Required |
+|--------|--------------------------|----------------------------|---------------|
+| POST   | /api/admin-login         | Admin login                | No            |
+| GET    | /api/analytics/overview  | Dashboard stats            | Admin         |
+| GET    | /api/analytics/trades    | Trade analytics            | Admin         |
+| GET    | /api/analytics/items     | Item analytics             | Admin         |
+| GET    | /api/activity-log        | Recent activity log        | Admin         |
+| POST   | /api/sql-query           | Run custom SQL queries     | Admin         |
 
 ---
 
@@ -126,6 +128,25 @@ Content-Type: application/json
 
 ## WebSockets
 - Real-time updates for dashboard and trades are delivered via WebSocket at `ws://localhost:15000`.
+- **Events:**
+  - `item:created` — Sent when a new item is added
+  - `item:updated` — Sent when an item is updated
+  - `item:deleted` — Sent when an item is deleted
+  - `trade:created` — Sent when a trade is created
+  - `trade:updated` — Sent when a trade is updated
+  - `trade:deleted` — Sent when a trade is deleted
+- **Example WebSocket Message:**
+```json
+{
+  "event": "item:created",
+  "data": {
+    "id": 123,
+    "name": "Sample Item",
+    ...
+  }
+}
+```
+- Connect using a WebSocket client to receive real-time updates for your dashboard or marketplace UI.
 
 ---
 

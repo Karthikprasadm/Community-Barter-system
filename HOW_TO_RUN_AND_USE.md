@@ -13,6 +13,54 @@ A complete, step-by-step guide to setting up, running, and using the Community B
 
 ---
 
+## 🐳 Docker Deployment (Optional)
+
+You can run the entire stack using Docker for easier setup and deployment.
+
+1. **Create a `.env` file** (as described below) for both backend and frontend.
+2. **Add a `Dockerfile` and `docker-compose.yml`** (see project root or sample below):
+
+**Sample `docker-compose.yml`:**
+```yaml
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: barter
+      POSTGRES_PASSWORD: barterpass
+      POSTGRES_DB: barterdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  backend:
+    build: ./barter-backend
+    env_file:
+      - ./barter-backend/.env
+    depends_on:
+      - db
+    ports:
+      - "15000:15000"
+  frontend:
+    build: .
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080"
+volumes:
+  pgdata:
+```
+3. **Run everything:**
+```sh
+docker-compose up --build
+```
+
+---
+
 ## 1️⃣ Clone the Repository
 ```sh
 git clone <YOUR_GIT_URL>
@@ -131,6 +179,28 @@ npm install            # In backend directory
 - [Prisma Docs](https://www.prisma.io/docs/)
 - [pgAdmin4 Docs](https://www.pgadmin.org/docs/)
 - [Node.js Docs](https://nodejs.org/en/docs)
+
+---
+
+## ❓ FAQ & Common Issues
+
+### Q: "Ports are already in use!"
+A: Make sure ports 8080 (frontend), 15000 (backend), and 5555 (Prisma Studio) are not used by other processes. Use `lsof -i :PORT` or Task Manager to free them.
+
+### Q: "Database connection error"
+A: Check your `.env` file for correct `DATABASE_URL`. Ensure PostgreSQL is running and credentials are correct.
+
+### Q: "Frontend can't reach backend API"
+A: Ensure `VITE_API_URL` in your frontend `.env` matches the backend URL/port. Both servers must be running.
+
+### Q: "Migrations or Prisma errors"
+A: Try running `npx prisma generate` and `npx prisma migrate dev` again. Make sure the database is accessible.
+
+### Q: "Bulk deletes fail in Prisma Studio"
+A: Try deleting records in smaller batches or clear dependent records first (e.g., delete offers before users).
+
+### Q: "Docker build fails"
+A: Check Docker logs for errors. Ensure your Dockerfiles and `docker-compose.yml` are up to date and environment variables are set correctly.
 
 ---
 

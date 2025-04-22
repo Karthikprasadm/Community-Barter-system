@@ -16,6 +16,16 @@ A modern web application for community-driven bartering, built as a DBMS/SQL pro
 
 ---
 
+## 🧑‍💻 Tech Stack
+- **Frontend:** React (Vite), TypeScript, Tailwind CSS
+- **Backend:** Node.js, Express.js, TypeScript
+- **Database:** PostgreSQL (via Prisma ORM)
+- **Real-time:** WebSockets
+- **Testing:** Jest, Supertest
+- **Other:** ESLint, Prettier, PostCSS, GitHub Actions (CI/CD)
+
+---
+
 ## 🛠️ Setup Instructions
 
 ### 1. **Clone the Repository**
@@ -179,6 +189,19 @@ graph TD;
   Admin-->|Direct DB Access|DB
 ```
 
+---
+
+## 🚦 CI/CD & Deployment
+
+- **CI/CD:**
+  - Automated tests and linting via GitHub Actions on every push and PR.
+  - Coverage reports generated for backend tests.
+- **Deployment:**
+  - Easily deployable to cloud platforms (Render, Heroku, Vercel, Netlify, etc.).
+  - Configure environment variables for production in `.env` files.
+  - For Docker-based deployment, add a `Dockerfile` and use `docker-compose` for multi-service orchestration.
+
+---
 
 ## Project info
 
