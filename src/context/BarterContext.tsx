@@ -238,7 +238,18 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const deleteItem = async (itemId: string) => {
-    await fetch(`${apiUrl}/api/items/${itemId}`, { method: "DELETE" });
+    let query = "";
+    if (isAdmin) {
+      query = "?admin=true";
+    } else if (currentUser) {
+      query = `?userId=${currentUser.id}`;
+    }
+    const res = await fetch(`${apiUrl}/api/items/${itemId}${query}`, { method: "DELETE" });
+    if (!res.ok) {
+      const errorText = await res.text();
+      toast({ variant: "destructive", title: "Delete failed", description: errorText || "Could not delete item." });
+      return;
+    }
     setItems(prev => prev.filter(item => item.id !== itemId));
     toast({ title: "Item deleted", description: "The item has been removed." });
   };
