@@ -104,7 +104,7 @@ app.post("/api/admin-login", async (req: Request, res: Response) => {
     // Set admin_session cookie (for demo, just user id; in production use JWT)
     res.cookie("admin_session", user.id, {
       httpOnly: true,
-      sameSite: "none", // Changed from 'lax' to 'none' for cross-origin support
+      sameSite: "lax", // Changed from 'none' to 'lax' for local dev
       secure: false, // Remain false for local HTTP development
       path: "/",
       maxAge: 1000 * 60 * 60 * 2, // 2 hours
@@ -735,7 +735,7 @@ app.post("/api/admin-login", async (req: Request, res: Response) => {
     // Set admin_session cookie (for demo, just user id; in production use JWT)
     res.cookie("admin_session", user.id, {
       httpOnly: true,
-      sameSite: "none", // Changed from 'lax' to 'none' for cross-origin support
+      sameSite: "lax", // Changed from 'none' to 'lax' for local dev
       secure: false, // Remain false for local HTTP development
       path: "/",
       maxAge: 1000 * 60 * 60 * 2, // 2 hours

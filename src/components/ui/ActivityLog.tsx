@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Card, 
@@ -65,7 +64,12 @@ export const ActivityLog: React.FC = () => {
     fetch(`${import.meta.env.VITE_API_URL}/api/activity-log`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
-        setActivities(data);
+        if (Array.isArray(data)) {
+          setActivities(data);
+        } else {
+          setActivities([]);
+          console.error("Failed to load activity log:", data?.error || data);
+        }
         setIsLoading(false);
       });
     // Real-time updates
@@ -104,7 +108,7 @@ export const ActivityLog: React.FC = () => {
   };
   
   const filteredActivities = filter 
-    ? activities.filter(activity => activity.type === filter)
+    ? activities.filter(activity => activity.type && activity.type.toLowerCase() === filter.toLowerCase())
     : activities;
     
   const handleClearLogs = async () => {
@@ -119,7 +123,12 @@ export const ActivityLog: React.FC = () => {
     fetch(`${import.meta.env.VITE_API_URL}/api/activity-log`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
-        setActivities(data);
+        if (Array.isArray(data)) {
+          setActivities(data);
+        } else {
+          setActivities([]);
+          console.error("Failed to load activity log:", data?.error || data);
+        }
         setIsLoading(false);
       });
   };

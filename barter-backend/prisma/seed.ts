@@ -1,5 +1,7 @@
+/// <reference types="node" />
+
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User, Item, Offer, Trade } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -208,6 +210,93 @@ async function main() {
     where: { id: item2.id },
     data: { isAvailable: false },
   });
+
+  // --- Bulk Users ---
+  const bulkUsers: User[] = [];
+  for (let i = 1; i <= 10; i++) {
+    const user = await prisma.user.create({
+      data: {
+        username: `user${i}`,
+        email: `user${i}@email.com`,
+        password: `pass${i}`,
+        joinedDate: new Date(),
+        reputation: Math.round(Math.random() * 5 * 10) / 10, // 0.0 to 5.0
+      },
+    });
+    bulkUsers.push(user);
+  }
+
+  // --- Bulk Items ---
+  const bulkItems: Item[] = [];
+  for (let i = 1; i <= 10; i++) {
+    const item = await prisma.item.create({
+      data: {
+        name: `Item${i}`,
+        description: `Description for Item${i}`,
+        category: i % 2 === 0 ? 'Electronics' : 'Books',
+        condition: i % 3 === 0 ? 'New' : 'Used',
+        isAvailable: i % 2 === 0,
+        userId: bulkUsers[i % bulkUsers.length].id,
+      },
+    });
+    bulkItems.push(item);
+  }
+
+  // --- Bulk Offers ---
+  const bulkOffers: Offer[] = [];
+  for (let i = 1; i <= 5; i++) {
+    const offer = await prisma.offer.create({
+      data: {
+        fromUserId: bulkUsers[i % bulkUsers.length].id,
+        toUserId: bulkUsers[(i + 1) % bulkUsers.length].id,
+        itemOfferedId: bulkItems[i % bulkItems.length].id,
+        itemRequestedId: bulkItems[(i + 1) % bulkItems.length].id,
+        status: ['pending', 'accepted', 'rejected'][i % 3],
+        offerDate: new Date(),
+      },
+    });
+    bulkOffers.push(offer);
+  }
+
+  // --- Bulk Trades ---
+  const bulkTrades: Trade[] = [];
+  for (let i = 0; i < bulkOffers.length; i++) {
+    const trade = await prisma.trade.create({
+      data: {
+        offerId: bulkOffers[i].id,
+        tradeDate: new Date(),
+        notes: `Trade note ${i + 1}`,
+      },
+    });
+    bulkTrades.push(trade);
+  }
+
+  // --- Bulk Ratings ---
+  for (let i = 0; i < bulkTrades.length; i++) {
+    await prisma.rating.create({
+      data: {
+        userId: bulkUsers[i % bulkUsers.length].id,
+        raterId: bulkUsers[(i + 1) % bulkUsers.length].id,
+        tradeId: bulkTrades[i].id,
+        ratingValue: Math.floor(Math.random() * 5) + 1,
+        comment: `Rating comment ${i + 1}`,
+      },
+    });
+  }
+
+  // --- Bulk Activity Logs ---
+  const allTypes = ['LOGIN', 'TRADE', 'OFFER', 'RATING', 'SYSTEM', 'USER', 'ITEM'];
+  for (let i = 1; i <= allTypes.length; i++) {
+    await prisma.activityLog.create({
+      data: {
+        timestamp: new Date(Date.now() - i * 86400000), // i days ago
+        type: allTypes[i - 1],
+        description: `Sample activity log entry #${i}`,
+        userId: i,
+        username: `user${i}`,
+      },
+    });
+  }
 
   console.log('Sample data seeded: users, items, offers, trades, ratings, and item status.');
 }
