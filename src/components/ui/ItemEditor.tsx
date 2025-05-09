@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -74,7 +73,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ item, onClose, onSave })
     condition: item?.condition || 'Good',
     isAvailable: item?.isAvailable ?? true,
     imageUrl: item?.imageUrl || '',
-    userId: item?.userId || currentUser?.id,
+    userId: (item?.userId ?? currentUser?.id ?? '').toString(),
   };
   
   const form = useForm<ItemFormValues>({
@@ -82,17 +81,22 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ item, onClose, onSave })
     defaultValues,
   });
   
+  // Log form errors on every render
+  React.useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.warn('Form validation errors:', form.formState.errors);
+    }
+  });
+  
   const onSubmit = async (values: ItemFormValues) => {
     setIsSubmitting(true);
-    
+    console.log('Submitting item form', { values, item });
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (item) {
-        // Update existing item
-        updateItem({
-          ...item,
+        await updateItem({
+          id: item.id,
+          userId: item.userId,
+          postedDate: item.postedDate,
           name: values.name,
           description: values.description,
           category: values.category,
@@ -100,14 +104,9 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ item, onClose, onSave })
           isAvailable: values.isAvailable,
           imageUrl: values.imageUrl,
         });
-        
-        toast({
-          title: "Item updated",
-          description: `${values.name} has been updated successfully.`,
-        });
+        console.log('updateItem called successfully');
       } else {
-        // Add new item
-        addItem({
+        await addItem({
           name: values.name,
           description: values.description,
           category: values.category,
@@ -115,15 +114,12 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ item, onClose, onSave })
           isAvailable: values.isAvailable,
           imageUrl: values.imageUrl,
         });
-        
-        toast({
-          title: "Item added",
-          description: `${values.name} has been added successfully.`,
-        });
+        console.log('addItem called successfully');
       }
-      
       onSave();
+      console.log('onSave called');
     } catch (error) {
+      console.error('Error in onSubmit:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -131,6 +127,13 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ item, onClose, onSave })
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  // Add a click handler to log errors when Save is clicked
+  const handleSaveClick = () => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.warn('Save clicked with validation errors:', form.formState.errors);
     }
   };
   
@@ -316,6 +319,7 @@ export const ItemEditor: React.FC<ItemEditorProps> = ({ item, onClose, onSave })
                 type="submit" 
                 disabled={isSubmitting}
                 className="flex items-center gap-2"
+                onClick={handleSaveClick}
               >
                 {isSubmitting ? (
                   <>

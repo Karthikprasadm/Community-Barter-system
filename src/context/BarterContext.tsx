@@ -227,14 +227,23 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const updateItem = async (updatedItem: Item) => {
-    const res = await fetch(`${apiUrl}/api/items/${updatedItem.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedItem)
-    });
-    const newItem = await res.json();
-    setItems(prev => prev.map(item => item.id === newItem.id ? newItem : item));
-    toast({ title: "Item updated", description: "The item has been updated successfully." });
+    try {
+      const res = await fetch(`${apiUrl}/api/items/${updatedItem.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedItem)
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        toast({ variant: "destructive", title: "Update failed", description: errorText || "Could not update item." });
+        return;
+      }
+      const newItem = await res.json();
+      setItems(prev => prev.map(item => item.id === newItem.id ? newItem : item));
+      toast({ title: "Item updated", description: "The item has been updated successfully." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Update failed", description: "Could not update item due to a network or server error." });
+    }
   };
 
   const deleteItem = async (itemId: string) => {
