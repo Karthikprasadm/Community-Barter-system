@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useBarterContext } from "@/context/BarterContext";
 import { Header } from "@/components/layout/Header";
@@ -24,7 +23,10 @@ const MyItems = () => {
     category: "",
     condition: "",
     imageUrl: "",
+    dropOption: "",
   });
+  const [showDropOptions, setShowDropOptions] = useState(false);
+  const [dropOption, setDropOption] = useState<'nah' | 'send'>("nah");
 
   // Block admins from adding items
   if (!currentUser || isAdmin) {
@@ -37,7 +39,7 @@ const MyItems = () => {
     );
   }
 
-  const userItems: ItemWithOwner[] = getUserItems(currentUser.id);
+  const userItems: ItemWithOwner[] = getUserItems(currentUser.id).filter(item => item.isAvailable);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -61,6 +63,7 @@ const MyItems = () => {
       condition: newItem.condition as Item["condition"],
       isAvailable: true,
       imageUrl: newItem.imageUrl,
+      dropOption: dropOption || "nah",
     });
     setNewItem({
       name: "",
@@ -68,7 +71,9 @@ const MyItems = () => {
       category: "",
       condition: "",
       imageUrl: "",
+      dropOption: "",
     });
+    setDropOption("nah");
     setOpen(false);
   };
 
@@ -174,6 +179,39 @@ const MyItems = () => {
                     onChange={handleInputChange}
                     placeholder="https://example.com/image.jpg"
                   />
+                </div>
+                {/* Drop It Off button and options */}
+                <div className="flex flex-col items-start mb-2">
+                  <div className="relative">
+                    <Button type="button" variant="outline" className="mt-2" onClick={() => setShowDropOptions((v) => !v)}>
+                      Drop It Off
+                    </Button>
+                    {showDropOptions && (
+                      <div className="absolute left-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
+                        <button type="button" className="block w-full px-4 py-2 text-left hover:bg-gray-100" onClick={() => { setDropOption('nah'); setNewItem(prev => ({ ...prev, dropOption: 'nah' })); setShowDropOptions(false); }}>
+                          Nah, I Got It
+                        </button>
+                        <button type="button" className="block w-full px-4 py-2 text-left hover:bg-gray-100" onClick={() => { setDropOption('send'); setNewItem(prev => ({ ...prev, dropOption: 'send' })); setShowDropOptions(false); }}>
+                          Send It Our Way
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {dropOption === 'nah' && (
+                    <span className="mt-1 text-sm text-gray-600">Selected: Nah, I Got It</span>
+                  )}
+                  {dropOption === 'send' && (
+                    <div className="mt-2 p-3 border rounded bg-gray-50 w-full max-w-xs">
+                      <div className="font-semibold text-base">Barter-Nexus Warehouse</div>
+                      <div className="text-xs text-gray-700 mt-1 whitespace-pre-line">
+                        RNS Institute of Technology,{"\n"}
+                        Dr. Vishnuvardhan Road{"\n"}
+                        R R Nagar Post{"\n"}
+                        Channasandra{"\n"}
+                        Bengaluru -560 098
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex justify-end gap-2">

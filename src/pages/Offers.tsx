@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useBarterContext } from "@/context/BarterContext";
 import { Header } from "@/components/layout/Header";
@@ -6,9 +5,10 @@ import { Footer } from "@/components/layout/Footer";
 import { OfferCard } from "@/components/ui/OfferCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navigate } from "react-router-dom";
+import { Item } from "@/types";
 
 const Offers = () => {
-  const { currentUser, getPendingOffersForUser, offers } = useBarterContext();
+  const { currentUser, getPendingOffersForUser, offers, users, items } = useBarterContext();
   const [activeTab, setActiveTab] = useState("pending");
 
   if (!currentUser) {
@@ -32,6 +32,20 @@ const Offers = () => {
   const rejectedOffers = allUserOffers.filter(
     offer => offer.status === "rejected"
   ).length;
+
+  const acceptedOffersList = allUserOffers.filter(
+    offer => offer.status === "accepted"
+  );
+
+  const defaultUser = { id: '', username: 'Unknown', email: '', reputation: 0, joinedDate: '', profileImage: '' };
+  const defaultItem = { id: '', name: 'Unknown Item', description: '', category: '', condition: 'Good' as Item['condition'], isAvailable: false, postedDate: '', userId: '', imageUrl: '' };
+  const acceptedOffersWithDetails = acceptedOffersList.map(offer => ({
+    ...offer,
+    fromUser: users.find(u => u.id === offer.fromUserId) || defaultUser,
+    toUser: users.find(u => u.id === offer.toUserId) || defaultUser,
+    itemOffered: items.find(i => i.id === offer.itemOfferedId) || defaultItem,
+    itemRequested: items.find(i => i.id === offer.itemRequestedId) || defaultItem,
+  }));
 
   const getSortedOffers = () => {
     return [...pendingOffers].sort((a, b) => {
@@ -98,10 +112,12 @@ const Offers = () => {
           </TabsContent>
           
           <TabsContent value="accepted" className="mt-6">
-            {acceptedOffers > 0 ? (
+            {acceptedOffersWithDetails.length > 0 ? (
               <div className="space-y-4">
-                {/* This would be similar to pendingOffers but with accepted offers */}
-                <p className="text-gray-500">You have {acceptedOffers} accepted offers.</p>
+                <p className="text-gray-500">You have {acceptedOffersWithDetails.length} accepted offers.</p>
+                {acceptedOffersWithDetails.map(offer => (
+                  <OfferCard key={offer.id} offer={offer} />
+                ))}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-lg border shadow-sm">

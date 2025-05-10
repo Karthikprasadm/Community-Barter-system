@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { User, Item, Trade, Offer } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -97,8 +96,8 @@ export const DashboardTabs = ({
         </TabsContent>
         
         <TabsContent value="trades" className="mt-0">
-          {/* You may want to render TradeHistory for a specific user, e.g. the first user in the list, or allow admin to pick a user. Example below uses first user if available: */}
-          {users.length > 0 && <TradeHistory userId={users[0].id} />}
+          {/* Show all trades for admin by passing userId={null} */}
+          <TradeHistory userId={null} />
         </TabsContent>
         
         <TabsContent value="analytics" className="mt-0">

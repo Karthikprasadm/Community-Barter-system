@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Repeat, PackageCheck, Package, ChevronDown, ChevronUp, Download } from "lucide-react";
@@ -16,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
+export const TradeHistory: React.FC<{ userId: string | null }> = ({ userId }) => {
   const { getUserTrades, trades, offers, items, getItemById, getUserById, isAdmin } = useBarterContext();
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -27,8 +26,8 @@ export const TradeHistory: React.FC<{ userId: string }> = ({ userId }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Show all trades for admin, or user-specific trades otherwise
-  const tradesToShow = isAdmin ? trades : getUserTrades(userId);
+  // Show all trades for admin if userId is null or 'ALL', or user-specific trades otherwise
+  const tradesToShow = (isAdmin && (userId === null || userId === 'ALL')) ? trades : getUserTrades(userId || "");
 
   // Debug logs
   console.log("All items:", items);

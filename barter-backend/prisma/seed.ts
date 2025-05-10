@@ -103,6 +103,44 @@ async function main() {
     },
   });
 
+  // --- Items with dropOption: 'send' ---
+  await prisma.item.create({
+    data: {
+      name: 'Seeded Send Item 1',
+      description: 'Demo item with dropOption send.',
+      category: 'Electronics',
+      condition: 'Like New',
+      isAvailable: true,
+      userId: user1.id,
+      dropOption: 'send',
+      imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8',
+    },
+  });
+  await prisma.item.create({
+    data: {
+      name: 'Seeded Send Item 2',
+      description: 'Another item with dropOption send.',
+      category: 'Books',
+      condition: 'Good',
+      isAvailable: true,
+      userId: user2.id,
+      dropOption: 'send',
+      imageUrl: 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4',
+    },
+  });
+  await prisma.item.create({
+    data: {
+      name: 'Seeded Send Item 3',
+      description: 'Third item with dropOption send.',
+      category: 'Toys',
+      condition: 'New',
+      isAvailable: true,
+      userId: user3.id,
+      dropOption: 'send',
+      imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+    },
+  });
+
   // --- Offers ---
   const offer1 = await prisma.offer.create({
     data: {
@@ -228,7 +266,7 @@ async function main() {
 
   // --- Bulk Items ---
   const bulkItems: Item[] = [];
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 20; i++) {
     const item = await prisma.item.create({
       data: {
         name: `Item${i}`,
@@ -237,6 +275,7 @@ async function main() {
         condition: i % 3 === 0 ? 'New' : 'Used',
         isAvailable: i % 2 === 0,
         userId: bulkUsers[i % bulkUsers.length].id,
+        dropOption: i <= 12 ? 'send' : undefined, // Only first 12 items get the badge
       },
     });
     bulkItems.push(item);

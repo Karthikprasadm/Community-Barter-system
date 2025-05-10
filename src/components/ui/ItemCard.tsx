@@ -1,4 +1,3 @@
-
 import { Item, User } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +6,7 @@ import { Clock, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
+import clipboardBadge from "../../assets/clipboard-badge.png";
 
 interface ItemCardProps {
   item: Item;
@@ -15,6 +15,8 @@ interface ItemCardProps {
 }
 
 export const ItemCard = ({ item, owner, showActions = true }: ItemCardProps) => {
+  console.log("ItemCard item:", item);
+  console.log('ItemCard:', JSON.stringify(item, null, 2));
   if (!item || !owner || typeof owner.username !== "string") {
     return <div className="p-4 text-red-500">Invalid item or owner data</div>;
   }
@@ -63,7 +65,12 @@ export const ItemCard = ({ item, owner, showActions = true }: ItemCardProps) => 
         <CardHeader className="p-4 pb-0">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
+              <h3 className="font-semibold text-lg line-clamp-1 flex items-center gap-1">
+                {item.name}
+                {item.dropOption === 'send' && (
+                  <img src={clipboardBadge} alt="Drop It Off Badge" className="inline-block align-middle h-4 w-4 ml-1" />
+                )}
+              </h3>
               <p className="text-muted-foreground text-sm">{item.category}</p>
             </div>
           </div>

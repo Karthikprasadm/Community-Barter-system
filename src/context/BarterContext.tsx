@@ -46,6 +46,7 @@ interface BarterContextType {
   addAdminUser: (username: string, email: string) => Promise<void>;
   removeAdminUser: (adminId: string) => Promise<void>;
   getAdminUserById: (adminId: string) => AdminUser | undefined;
+  refreshItems: () => void;
 }
 
 const BarterContext = createContext<BarterContextType | undefined>(undefined);
@@ -268,7 +269,13 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const res = await fetch(`${apiUrl}/api/offers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromUserId, toUserId, itemOfferedId, itemRequestedId })
+        body: JSON.stringify({
+          fromUserId: Number(fromUserId),
+          toUserId: Number(toUserId),
+          itemOfferedId: Number(itemOfferedId),
+          itemRequestedId: Number(itemRequestedId),
+          status: "pending"
+        })
       });
       const newOffer = await res.json();
       setOffers(prev => [...prev, newOffer]);
@@ -280,12 +287,14 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const respondToOffer = async (offerId: string, accept: boolean) => {
     try {
+      console.log("[respondToOffer] Called with offerId:", offerId, "accept:", accept);
       // Update offer status
       const res = await fetch(`${apiUrl}/api/offers/${offerId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: accept ? "accepted" : "rejected" })
       });
+      console.log("[respondToOffer] PUT /api/offers/ response:", res.status, res.statusText);
       const updatedOffer = await res.json();
       setOffers(prev => prev.map(offer => offer.id === offerId ? updatedOffer : offer));
 
@@ -296,6 +305,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ offerId })
         });
+        console.log("[respondToOffer] POST /api/trades response:", tradeRes.status, tradeRes.statusText);
         const newTrade = await tradeRes.json();
         setTrades(prev => [...prev, newTrade]);
         // Optionally, refresh items from backend to reflect availability
@@ -305,6 +315,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         toast({ title: "Offer rejected", description: "The barter offer has been declined." });
       }
     } catch (err) {
+      console.error("[respondToOffer] Error:", err);
       toast({ variant: "destructive", title: "Offer response failed", description: "Could not respond to offer." });
     }
   };
@@ -535,6 +546,13 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return undefined;
   };
 
+  // Fetch all items from backend and update state
+  const refreshItems = useCallback(() => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    fetch(`${apiUrl}/api/items`)
+      .then(res => res.json())
+      .then(data => setItems(Array.isArray(data) ? data : (data.items || [])));
+  }, []);
 
   const contextValue: BarterContextType = {
     currentUser,
@@ -566,6 +584,7 @@ export const BarterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     addAdminUser,
     removeAdminUser,
     getAdminUserById,
+    refreshItems,
   };
 
   return (

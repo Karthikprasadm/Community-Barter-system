@@ -46,16 +46,29 @@ const ItemDetail = () => {
   
   const canTrade = currentUser && !isOwner && userItems.length > 0 && item.isAvailable;
   
-  const handleTrade = (e: React.FormEvent) => {
+  const handleTrade = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !selectedItem) return;
-    
-    createOffer(currentUser.id, owner.id, selectedItem, item.id);
-    setTradeDialogOpen(false);
-    toast({
-      title: "Offer sent",
-      description: "Your barter offer has been sent to the owner.",
-    });
+    try {
+      console.log("Creating offer with:", {
+        fromUserId: currentUser.id,
+        toUserId: owner.id,
+        itemOfferedId: selectedItem,
+        itemRequestedId: item.id
+      });
+      await createOffer(currentUser.id, owner.id, selectedItem, item.id);
+      setTradeDialogOpen(false);
+      toast({
+        title: "Offer sent",
+        description: "Your barter offer has been sent to the owner.",
+      });
+    } catch (error) {
+      toast({
+        title: "Offer failed",
+        description: "There was a problem sending your offer. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleEdit = () => {
@@ -264,7 +277,10 @@ const ItemDetail = () => {
                                 required
                               >
                                 <SelectTrigger id="item-select">
-                                  <SelectValue placeholder="Choose an item" />
+                                  <SelectValue
+                                    placeholder="Choose an item"
+                                    children={selectedItem ? userItems.find((u) => String(u.id) === String(selectedItem))?.name : ""}
+                                  />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {userItems.map((userItem) => (

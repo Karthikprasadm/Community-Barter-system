@@ -216,7 +216,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- ADVANCED SQL DEMO ENDPOINTS ---
+// --- ADANCED SQL DEMO ENDPOINTS ---
 // 1. JOIN: Get all items with owner's username
 app.get("/api/items-with-owners", async (req: Request, res: Response) => {
   const result =
@@ -322,6 +322,7 @@ app.get("/api/items", async (req: Request, res: Response) => {
   const items = await prisma.item.findMany({
     include: { user: true },
   });
+  console.log("[DEBUG] /api/items response:", items.map(item => ({ id: item.id, name: item.name, isAvailable: item.isAvailable })));
   res.json(items);
 });
 
@@ -396,7 +397,7 @@ app.get("/api/users/search", async (req: Request, res: Response) => {
 });
 
 app.post("/api/items", async (req: Request, res: Response) => {
-  const { name, description, category, condition, userId, imageUrl } = req.body;
+  const { name, description, category, condition, userId, imageUrl, dropOption } = req.body;
   console.log("[ITEM CREATE DEBUG] Incoming payload:", req.body);
   if (!name || !description || !category || !condition || !userId) {
     console.log("[ITEM CREATE DEBUG] Missing required fields:", { name, description, category, condition, userId });
@@ -404,7 +405,7 @@ app.post("/api/items", async (req: Request, res: Response) => {
   }
   try {
     const item = await prisma.item.create({
-      data: { name, description, category, condition, userId: Number(userId), imageUrl },
+      data: { name, description, category, condition, userId: Number(userId), imageUrl, dropOption },
     });
     console.log("[ITEM CREATE DEBUG] Item created:", item.id);
     // Emit WebSocket event if broadcastUpdate is set
@@ -554,6 +555,20 @@ app.post("/api/offers", async (req: Request, res: Response) => {
   }
 });
 
+app.put("/api/offers/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    const updatedOffer = await prisma.offer.update({
+      where: { id: Number(id) },
+      data: { status },
+    });
+    res.json(updatedOffer);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to update offer", details: err });
+  }
+});
+
 // --- TRADES CRUD ---
 app.get("/api/trades", async (req: Request, res: Response) => {
   try {
@@ -569,9 +584,41 @@ app.get("/api/trades", async (req: Request, res: Response) => {
 app.post("/api/trades", async (req: Request, res: Response) => {
   const { offerId, notes }: { offerId: number; notes: string } = req.body;
   try {
-    const trade = await prisma.trade.create({ data: { offerId, notes } });
-    res.status(201).json(trade);
+    // Fetch the offer to get the item IDs
+    const offer = await prisma.offer.findUnique({ where: { id: offerId } });
+    if (!offer) return res.status(404).json({ error: "Offer not found" });
+    console.log('[DEBUG] Offer object:', offer);
+    let tradeResult, offeredUpdate, requestedUpdate;
+    try {
+      tradeResult = await prisma.trade.create({ data: { offerId, notes } });
+      console.log('[DEBUG] Trade created:', tradeResult);
+    } catch (err) {
+      console.error('[ERROR] Trade creation failed:', err);
+      throw err;
+    }
+    try {
+      offeredUpdate = await prisma.item.update({ where: { id: offer.itemOfferedId }, data: { isAvailable: false } });
+      console.log('[DEBUG] Offered item updated:', offeredUpdate);
+    } catch (err) {
+      console.error('[ERROR] Offered item update failed:', err);
+      throw err;
+    }
+    try {
+      requestedUpdate = await prisma.item.update({ where: { id: offer.itemRequestedId }, data: { isAvailable: false } });
+      console.log('[DEBUG] Requested item updated:', requestedUpdate);
+    } catch (err) {
+      console.error('[ERROR] Requested item update failed:', err);
+      throw err;
+    }
+    res.status(201).json(tradeResult); // Return the created trade
+
+    // Emit item:updated events for both items (real-time update)
+    if (typeof broadcastUpdate === "function") {
+      if (offeredUpdate) broadcastUpdate("item:updated", offeredUpdate);
+      if (requestedUpdate) broadcastUpdate("item:updated", requestedUpdate);
+    }
   } catch (err) {
+    console.error('[ERROR] Trade transaction failed:', err);
     res.status(400).json({ error: "Trade creation failed", details: err });
   }
 });
@@ -638,8 +685,6 @@ app.delete("/api/ratings/:id", async (req: Request, res: Response) => {
     res.status(404).json({ error: "Rating not found", details: err });
   }
 });
-
-// ... rest of the code ...
 
 // --- ADMIN LOGIN ---
 // --- ADMIN LOGIN ---

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -23,6 +22,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { User, Item } from '@/types';
 
 interface ItemsTabProps {
   users: User[];
@@ -57,12 +57,14 @@ export const ItemsTab = ({
       });
   }, []);
 
-  // Filter items based on search term
-  const filteredItems = items.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter items to only show available ones, then apply search term
+  const filteredItems = items
+    .filter(item => item.isAvailable)
+    .filter(item => 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   const handleStatusUpdate = (itemId: string, status: boolean) => {
     handleUpdateItemStatus(itemId, status);

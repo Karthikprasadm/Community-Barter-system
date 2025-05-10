@@ -1,4 +1,3 @@
-
 import { OfferWithDetails } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ interface OfferCardProps {
 }
 
 export const OfferCard = ({ offer }: OfferCardProps) => {
-  const { currentUser, respondToOffer } = useBarterContext();
+  const { currentUser, respondToOffer, refreshItems } = useBarterContext();
   const isReceived = currentUser?.id === offer.toUserId;
   const timeAgo = formatDistanceToNow(new Date(offer.offerDate), { addSuffix: true });
 
@@ -30,12 +29,14 @@ export const OfferCard = ({ offer }: OfferCardProps) => {
     }
   };
 
-  const handleAccept = () => {
-    respondToOffer(offer.id, true);
+  const handleAccept = async () => {
+    await respondToOffer(offer.id, true);
+    refreshItems();
   };
 
-  const handleReject = () => {
-    respondToOffer(offer.id, false);
+  const handleReject = async () => {
+    await respondToOffer(offer.id, false);
+    refreshItems();
   };
 
   return (

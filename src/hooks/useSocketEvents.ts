@@ -19,7 +19,16 @@ const ALL_EVENTS = [
 
 export function useSocketEvents(eventHandlers: Partial<Record<string, (data: any) => void>>) {
   useEffect(() => {
-    const socket: Socket = io(SOCKET_URL);
+    const socket: Socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
+    socket.on('connect_error', (err) => {
+      console.error('[SOCKET] Connection error:', err);
+    });
+    socket.on('connect', () => {
+      console.log('[SOCKET] Connected:', socket.id);
+    });
+    socket.on('disconnect', (reason) => {
+      console.warn('[SOCKET] Disconnected:', reason);
+    });
     // Register all handlers provided
     Object.entries(eventHandlers).forEach(([event, handler]) => {
       if (handler) socket.on(event, handler);

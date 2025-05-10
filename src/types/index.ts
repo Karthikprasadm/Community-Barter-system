@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string;
@@ -19,6 +18,7 @@ export interface Item {
   isAvailable: boolean;
   postedDate: string;
   imageUrl?: string;
+  dropOption?: 'send' | 'nah';
 }
 
 export interface Offer {
