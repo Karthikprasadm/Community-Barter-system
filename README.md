@@ -1,195 +1,180 @@
+# Community Barter System
 
-# Barter Community Nexus
+A modern web application for community-driven bartering, built as a DBMS/SQL project. This app enables users to list, offer, and trade goods, with a secure admin dashboard for management.
 
-A modern web application for community-driven bartering, built as a DBMS/SQL project for engineering coursework. This app enables users to list, offer, and trade goods, with a secure admin dashboard for management.
+## 🌟 Key Features
 
----
+- **User Management**
+  - Secure registration and login
+  - Profile management with reputation system
+  - User statistics and activity tracking
+  - Trade history and reviews
 
-## 🚀 Features
-- User registration and login (case-insensitive, secure)
-- Admin login and dashboard (manage users, items, trades)
-- Real-time updates via WebSockets
-- Item listing, offers, and trade management
-- Activity logging
-- PostgreSQL database (Prisma ORM)
-- Modern React frontend (Vite)
+- **Item Management**
+  - List items for barter
+  - Browse marketplace
+  - Make and receive offers
+  - Track item status
 
----
+- **Trading System**
+  - Real-time offer notifications
+  - Trade history tracking
+  - User reputation system
+  - Rating and review system
 
-## 🧑‍💻 Tech Stack
-- **Frontend:** React (Vite), TypeScript, Tailwind CSS
-- **Backend:** Node.js, Express.js, TypeScript
-- **Database:** PostgreSQL (via Prisma ORM)
-- **Real-time:** WebSockets
-- **Testing:** Jest, Supertest
-- **Other:** ESLint, Prettier, PostCSS, GitHub Actions (CI/CD)
+- **Admin Features**
+  - User management dashboard
+  - Item moderation
+  - Trade monitoring
+  - Analytics and reporting
 
----
+## 🛠️ Tech Stack
 
-## 🛠️ Setup Instructions
+- **Frontend**
+  - React with TypeScript
+  - Vite for build tooling
+  - Tailwind CSS for styling
+  - Shadcn UI components
+  - React Query for data fetching
 
-### 1. **Clone the Repository**
-```sh
-git clone <your-repo-url>
-cd barter-community-nexus
-```
+- **Backend**
+  - Node.js with Express
+  - TypeScript
+  - PostgreSQL database
+  - Prisma ORM
+  - WebSocket for real-time updates
 
-### 2. **Backend Setup**
-```sh
+- **Development Tools**
+  - ESLint for code linting
+  - Jest for testing
+  - GitHub Actions for CI/CD
+  - Docker support
+
+## 🚀 Quick Start
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/Karthikprasadm/community-barter-system.git
+   cd community-barter-system
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   # Install frontend dependencies
+   npm install
+   
+   # Install backend dependencies
+   cd barter-backend
+   npm install
+   ```
+
+3. **Environment Setup**
+   ```bash
+   # Backend
+   cd barter-backend
+   cp .env.example .env
+   # Edit .env with your database credentials
+   
+   # Frontend
+   cd ..
+   cp .env.example .env
+   # Edit .env with your API URL
+   ```
+
+4. **Database Setup**
+   ```bash
+   cd barter-backend
+   npx prisma migrate dev --name init
+   ```
+
+5. **Start the Application**
+   ```bash
+   # Start backend (in barter-backend directory)
+   npm run dev
+   
+   # Start frontend (in root directory)
+   npm run dev
+   ```
+
+## 📱 Features in Detail
+
+### User Profile
+- Profile customization
+- Activity statistics
+- Reputation score
+- Trade history
+- Item management
+
+### Marketplace
+- Browse items
+- Search and filter
+- Make offers
+- Track trades
+
+### Admin Dashboard
+- User management
+- Content moderation
+- Analytics
+- System settings
+
+## 🔧 Development
+
+### Available Scripts
+```bash
+# Frontend
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+npm run test         # Run tests
+
+# Backend
 cd barter-backend
-npm install
-```
-- Copy `.env.example` to `.env` and set your Postgres connection string:
-  ```env
-  DATABASE_URL=postgresql://<user>:<password>@localhost:5432/<dbname>?schema=public
-  ```
-
-### 3. **Frontend Setup**
-```sh
-cd ../
-npm install
-```
-- Configure your API endpoint in `.env` (if needed):
-  ```env
-  VITE_API_URL=http://localhost:15000
-  ```
-
-### 4. **Database (Postgres) Setup**
-- Make sure PostgreSQL is running.
-- Run Prisma migrations:
-  ```sh
-  cd barter-backend
-  npx prisma migrate dev --name init
-  ```
-- (Optional) Open Prisma Studio to view/manage data:
-  ```sh
-  npx prisma studio
-  ```
-
-### 5. **Seed Data**
-- (If you have a `prisma/seed.ts` or SQL seed, run it. Otherwise, add users/admins via Prisma Studio or SQL.)
-
----
-
-## 🏁 Running the App
-
-### Start Backend:
-```sh
-cd barter-backend
-npm run dev
-# or
-npx ts-node src/app.ts
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run test         # Run tests
 ```
 
-### Start Frontend:
-```sh
-cd ../
-npm run dev
+### Database Management
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Create migration
+npx prisma migrate dev --name <migration-name>
+
+# Open Prisma Studio
+npx prisma studio
 ```
 
----
+## 📚 Documentation
 
-## 👤 Demo Credentials (for testing)
+- [API Documentation](./API.md)
+- [Setup Guide](./HOW_TO_RUN_AND_USE.md)
+- [Testing Guide](./TESTS.md)
 
-> **Default Admin:**  
-> Email: `wingspawn28@gmail.com`  
-> Username: `wingspawn`  
-> Password: `wingspawn`
+## 🤝 Contributing
 
-> **Default User:**  
-> (Add via registration or Prisma Studio)
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
----
+## 📄 License
 
-## 📄 Notes
-- Make sure `.env` files are not committed (see `.gitignore`).
-- Passwords are stored in plaintext for demo; use hashing for production!
-- For deployment, update all URLs and environment variables accordingly.
+This project is licensed under the AGPL-3.0 License - see the [LICENSE](./LICENSE) file for details.
 
----
+## 👥 Authors
 
-## 📚 License
-MIT (or specify your university’s requirement)
+- Karthik Prasad M - Initial work
 
-## Scripts
-- `npm run dev` – Start frontend in development mode
-- `npm run start` – Start backend server
-- `npm run build` – Build frontend for production
-- `npm test` – Run tests
-- `npx prisma studio` – Open Prisma Studio
+## 🙏 Acknowledgments
 
-## Database Migrations
-- To create a new migration:
-  ```sh
-  npx prisma migrate dev --name <migration-name>
-  ```
-- To revert a migration:
-  ```sh
-  npx prisma migrate resolve --rolled-back <migration-name>
-  ```
-
-## Real-Time Sync: Prisma, pgAdmin4, and the App
-
-### Data Changes
-- Any data updates (create, update, delete) made via the app, Prisma Studio, or directly in pgAdmin4 are immediately reflected everywhere, as long as the app fetches fresh data from the database.
-- For true real-time updates in the frontend, the app uses WebSockets to broadcast changes as they happen. (See below for setup.)
-
-### Schema Changes
-- If you change the schema using Prisma (edit `schema.prisma` + migrate), changes are instantly available in pgAdmin4 and the app.
-- If you change the schema directly in pgAdmin4 (or via raw SQL), you must update Prisma:
-  ```sh
-  npm run db:pull   # Pull latest DB schema into Prisma
-  npm run db:gen    # Regenerate Prisma client
-  ```
-- Always regenerate the Prisma client after any schema change.
-
-### NPM Scripts for Sync
-- `npm run db:pull` – Pulls DB schema changes into Prisma (`prisma db pull`)
-- `npm run db:gen` – Regenerates Prisma client (`prisma generate`)
-
-### Real-Time Data Sync in the App
-- The backend uses WebSockets to push updates to the frontend when data changes.
-- To enable this, start the backend and frontend as usual. The frontend will receive live updates for item/user/trade changes.
-
----
-- To create a new migration:
-  ```sh
-  npx prisma migrate dev --name <migration-name>
-  ```
-- To revert a migration:
-  ```sh
-  npx prisma migrate resolve --rolled-back <migration-name>
-  ```
-
-## Testing
-- All tests are in `barter-backend/tests`.
-- Run tests with:
-  ```sh
-  npm test
-  ```
-
-## API Overview
-See `API.md` for a list of available endpoints, methods, and request/response formats.
-
-## Architecture Diagram
-
-```mermaid
-graph TD;
-  User[User]
-  Frontend[React + Vite]
-  Backend[Express API]
-  Prisma[Prisma ORM]
-  DB[(PostgreSQL)]
-  Admin[Prisma Studio/pgAdmin4]
-
-  User-->|Browser|Frontend
-  Frontend-->|REST API|Backend
-  Backend-->|ORM|Prisma
-  Prisma-->|SQL|DB
-  Admin-->|Direct DB Access|DB
-```
-
----
+- Thanks to all contributors
+- Inspired by community barter systems
+- Built with modern web technologies
 
 ## 🚦 CI/CD & Deployment
 
@@ -201,17 +186,11 @@ graph TD;
   - Configure environment variables for production in `.env` files.
   - For Docker-based deployment, add a `Dockerfile` and use `docker-compose` for multi-service orchestration.
 
----
-
 ## Project info
-
-
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
-
-
 
 Clone this repository and follow the local setup instructions below to start developing and contributing.
 
@@ -377,7 +356,7 @@ Follow these guidelines to keep your backend and database healthy, reliable, and
   ```sh
   npm update @prisma/client prisma
   ```
-- Check for breaking changes in Prisma’s release notes before major upgrades.
+- Check for breaking changes in Prisma's release notes before major upgrades.
 
 ### After Any Backend/DB Update
 - Run all tests:
